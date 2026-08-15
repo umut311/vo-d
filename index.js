@@ -184,12 +184,12 @@ client.on('guildMemberAdd', async member => {
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
-    // GEMINI AI KONTROLÜ (Güncel stabil model)
+    // GEMINI AI KONTROLÜ (Stabil 1.5-flash modeli)
     const isAiChannel = await AiChannel.findOne({ channelId: message.channel.id });
     if (isAiChannel && !message.content.startsWith('v!') && !message.content.startsWith('v')) {
         await message.channel.sendTyping();
         try {
-            const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
             const result = await model.generateContent([
                 { text: "Senin adın Void AI. Yazılımdan ve kodlamadan çok iyi anlayan samimi ve kanka diyerek konuşabilen bir yapay zekasın. Yaratıcın Umut'tur." },
                 { text: message.content }
@@ -289,7 +289,7 @@ client.on('interactionCreate', async interaction => {
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
         if (['btn_cev_auth_saved', 'btn_cev_mode', 'btn_cev_start', 'btn_cev_stop', 'select_cev_token', 'select_cev_mode'].includes(id)) {
-            const cmd = client.textCard ? client.textCommands.get('ceviri') : client.textCommands.get('ceviri');
+            const cmd = client.textCommands.get('ceviri');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
     }
