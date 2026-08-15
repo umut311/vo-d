@@ -60,7 +60,7 @@ app.get('/callback', async (req, res) => {
             }
         } catch (err) { console.error("OAuth Hatası:", err); }
     } else {
-        if (logChannel) logChannel.send({ embeds: [new EmbedBuilder().setTitle('Void | Yetkilendirme Başarılı').setDescription('Biri uygulamayı yetkilendirdi.').setColor('#5865F2'].setTimestamp() }).catch(()=>{});
+        if (logChannel) logChannel.send({ embeds: [new EmbedBuilder().setTitle('Void | Yetkilendirme Başarılı').setDescription('Biri uygulamayı yetkilendirdi.').setColor('#5865F2').setTimestamp()] }).catch(()=>{});
     }
     res.send('Void uygulamasını başarıyla yetkilendirdiniz! Bu pencereyi kapatabilirsiniz.');
 });
