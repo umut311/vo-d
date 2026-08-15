@@ -21,15 +21,15 @@ const path = require('path');
 const express = require('express');
 const mongoose = require('mongoose');
 const { joinVoiceChannel } = require('@discordjs/voice');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 require('dotenv').config();
 
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const MY_CLIENT_ID = "1491071700715048970"; 
 const MY_CLIENT_SECRET = process.env.CLIENT_SECRET || "_I2W0duhYviJuoJqMBy6MT3VLrWE4aur"; 
 const MY_REDIRECT_URI = "https://void-project-d59p.onrender.com/callback";
 const MOD_ROLE_ID = "1537938887509278871"; 
 const OWNER_ID = "345821033414262794"; 
-
-const GROK_API_KEY = process.env.GROK_API_KEY;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -184,41 +184,28 @@ client.on('guildMemberAdd', async member => {
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
-    // GROK AI KONTROLÜ (Doğru API adresi ve grok-4.6 modeli)
+    // GEMINI AI KONTROLÜ
     const isAiChannel = await AiChannel.findOne({ channelId: message.channel.id });
     if (isAiChannel && !message.content.startsWith('v!') && !message.content.startsWith('v')) {
         await message.channel.sendTyping();
         try {
-            const response = await fetch('https://api.x.ai/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${GROK_API_KEY}`
-                },
-                body: JSON.stringify({
-                    model: "grok-4.6", 
-                    messages: [
-                        { role: "system", content: "Senin adın Void AI. Yazılımdan ve kodlamadan çok iyi anlayan samimi ve kanka diyerek konuşabilen bir yapay zekasın. Yaratıcın Umut'tur." },
-                        { role: "user", content: message.content }
-                    ]
-                })
-            });
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const result = await model.generateContent([
+                { text: "Senin adın Void AI. Yazılımdan ve kodlamadan çok iyi anlayan samimi ve kanka diyerek konuşabilen bir yapay zekasın. Yaratıcın Umut'tur." },
+                { text: message.content }
+            ]);
+            const response = await result.response;
+            const reply = response.text();
 
-            const data = await response.json();
-            if (data.choices && data.choices[0]) {
-                const reply = data.choices[0].message.content;
-                if (reply.length > 2000) {
-                    const chunks = reply.match(/[\s\S]{1,1950}/g) || [];
-                    for (const chunk of chunks) { await message.channel.send(chunk); }
-                } else {
-                    await message.reply(reply);
-                }
+            if (reply.length > 2000) {
+                const chunks = reply.match(/[\s\S]{1,1950}/g) || [];
+                for (const chunk of chunks) { await message.channel.send(chunk); }
             } else {
-                await message.reply('Kanka serviste yoğunluk var, tekrar dene.');
+                await message.reply(reply);
             }
         } catch (err) {
-            console.error("Grok API Hatası:", err);
-            await message.reply('Bağlantı hatası oluştu.');
+            console.error("Gemini API Hatası:", err);
+            await message.reply('Kanka Gemini şu an yoğun, tekrar dene.');
         }
         return; 
     }
