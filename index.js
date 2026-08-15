@@ -29,7 +29,6 @@ const MY_REDIRECT_URI = "https://void-project-d59p.onrender.com/callback";
 const MOD_ROLE_ID = "1537938887509278871"; 
 const OWNER_ID = "345821033414262794"; 
 
-// GROK API ANAHTARI (.env'den güvenli şekilde okunur)
 const GROK_API_KEY = process.env.GROK_API_KEY;
 
 const app = express();
@@ -185,19 +184,19 @@ client.on('guildMemberAdd', async member => {
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
-    // GROK AI KONTROLÜ
+    // GROK AI KONTROLÜ (Doğru API adresi ve grok-4.6 modeli)
     const isAiChannel = await AiChannel.findOne({ channelId: message.channel.id });
     if (isAiChannel && !message.content.startsWith('v!') && !message.content.startsWith('v')) {
         await message.channel.sendTyping();
         try {
-            const response = await fetch('https://api.xai.com/v1/chat/completions', {
+            const response = await fetch('https://api.x.ai/v1/chat/completions', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${GROK_API_KEY}`
                 },
                 body: JSON.stringify({
-                    model: "grok-beta", 
+                    model: "grok-4.6", 
                     messages: [
                         { role: "system", content: "Senin adın Void AI. Yazılımdan ve kodlamadan çok iyi anlayan samimi ve kanka diyerek konuşabilen bir yapay zekasın. Yaratıcın Umut'tur." },
                         { role: "user", content: message.content }
