@@ -184,16 +184,15 @@ client.on('guildMemberAdd', async member => {
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
-    // GEMINI AI KONTROLÜ (Stabil 1.5-flash modeli)
+    // GEMINI AI KONTROLÜ (Hata ayıklama modlu)
     const isAiChannel = await AiChannel.findOne({ channelId: message.channel.id });
     if (isAiChannel && !message.content.startsWith('v!') && !message.content.startsWith('v')) {
         await message.channel.sendTyping();
         try {
             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-            const result = await model.generateContent([
-                { text: "Senin adın Void AI. Yazılımdan ve kodlamadan çok iyi anlayan samimi ve kanka diyerek konuşabilen bir yapay zekasın. Yaratıcın Umut'tur." },
-                { text: message.content }
-            ]);
+            const prompt = `Senin adın Void AI. Yazılımdan çok iyi anlayan samimi bir kankasın. Yaratıcın Umut'tur. Soru: ${message.content}`;
+            
+            const result = await model.generateContent(prompt);
             const response = await result.response;
             const reply = response.text();
 
@@ -205,7 +204,8 @@ client.on('messageCreate', async message => {
             }
         } catch (err) {
             console.error("Gemini API Hatası:", err);
-            await message.reply('Kanka Gemini şu an yanıt vermedi, birazdan tekrar dene.');
+            // Hatayı doğrudan Discord'a yansıtıyoruz
+            await message.reply(`Kanka Hata Alındı: \`${err.message}\``);
         }
         return; 
     }
