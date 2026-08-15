@@ -29,8 +29,8 @@ const MY_REDIRECT_URI = "https://void-project-d59p.onrender.com/callback";
 const MOD_ROLE_ID = "1537938887509278871"; 
 const OWNER_ID = "345821033414262794"; 
 
-// GROK API ANAHTARI
-const GROK_API_KEY = "xai-3EaxXsBB3IAPSwyaAYXjVV0oqzH5GgWrzi78BsR9XbJ8gsL5jfFYnL2pE08rGpPeV02dAniT5IyIbkhr";
+// GROK API ANAHTARI (.env'den güvenli şekilde okunur)
+const GROK_API_KEY = process.env.GROK_API_KEY;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -55,7 +55,7 @@ app.get('/callback', async (req, res) => {
                 const userData = await userRes.json();
                 
                 if (logChannel) {
-                    const embed = new EmbedBuilder().setTitle('<a:emoji58:1537925046486433802> Void | Hesaba Yetki Verildi!').setDescription(`<a:emoji109:1537925984882266212> **Yetki Veren Kullanıcı:** <@${userData.id}> (\`${userData.username}\`)`).setColor('#5865F2').setTimestamp();
+                    const embed = new EmbedBuilder().setTitle('Void | Hesaba Yetki Verildi!').setDescription(`Yetki Veren Kullanıcı: <@${userData.id}> (\`${userData.username}\`)`).setColor('#5865F2').setTimestamp();
                     logChannel.send({ embeds: [embed] }).catch(()=>{});
                 }
             }
@@ -127,7 +127,7 @@ client.on('guildBanAdd', async ban => {
             if (banLog.reason) reason = banLog.reason;
         }
     } catch (e) {}
-    const embed = new EmbedBuilder().setTitle('🔨 Bir Kullanıcı Yasaklandı!').setColor('#ff0000').addFields({ name: 'Kullanıcı', value: `${ban.user.tag} (\`${ban.user.id}\`)`, inline: true }, { name: 'Yetkili', value: `\`${executor}\``, inline: true }, { name: 'Sebep', value: `\`${reason}\``, inline: false }).setTimestamp();
+    const embed = new EmbedBuilder().setTitle('🔨 Kullanıcı Yasaklandı!').setColor('#ff0000').addFields({ name: 'Kullanıcı', value: `${ban.user.tag}`, inline: true }, { name: 'Yetkili', value: `${executor}`, inline: true }, { name: 'Sebep', value: `${reason}`, inline: false }).setTimestamp();
     logChannel.send({ embeds: [embed] }).catch(()=>{});
 });
 
@@ -140,7 +140,7 @@ client.on('guildBanRemove', async ban => {
         const unbanLog = auditLogs.entries.first();
         if (unbanLog && unbanLog.target.id === ban.user.id) executor = unbanLog.executor.tag;
     } catch (e) {}
-    const embed = new EmbedBuilder().setTitle('🔓 Yasak Kaldırıldı!').setColor('#00ff00').addFields({ name: 'Kullanıcı', value: `${ban.user.tag} (\`${ban.user.id}\`)`, inline: true }, { name: 'Yetkili', value: `\`${executor}\``, inline: true }).setTimestamp();
+    const embed = new EmbedBuilder().setTitle('🔓 Yasak Kaldırıldı!').setColor('#00ff00').addFields({ name: 'Kullanıcı', value: `${ban.user.tag}`, inline: true }, { name: 'Yetkili', value: `${executor}`, inline: true }).setTimestamp();
     logChannel.send({ embeds: [embed] }).catch(()=>{});
 });
 
@@ -161,7 +161,7 @@ client.on('guildMemberRemove', async member => {
     if (isKick) {
         const logChannel = member.guild.channels.cache.find(c => c.name === 'kick');
         if (logChannel) {
-            const embed = new EmbedBuilder().setTitle('🥾 Bir Kullanıcı Sunucudan Atıldı!').setColor('#ffa500').addFields({ name: 'Kullanıcı', value: `${member.user.tag} (\`${member.id}\`)`, inline: true }, { name: 'Yetkili', value: `\`${executor}\``, inline: true }, { name: 'Sebep', value: `\`${reason}\``, inline: false }).setTimestamp();
+            const embed = new EmbedBuilder().setTitle('🥾 Kullanıcı Atıldı!').setColor('#ffa500').addFields({ name: 'Kullanıcı', value: `${member.user.tag}`, inline: true }, { name: 'Yetkili', value: `${executor}`, inline: true }, { name: 'Sebep', value: `${reason}`, inline: false }).setTimestamp();
             logChannel.send({ embeds: [embed] }).catch(()=>{});
         }
     } else {
@@ -199,7 +199,7 @@ client.on('messageCreate', async message => {
                 body: JSON.stringify({
                     model: "grok-beta", 
                     messages: [
-                        { role: "system", content: "Senin adın Void AI. Yazılımdan, kodlamadan çok iyi anlayan samimi ve kanka diyerek konuşabilen bir yapay zekasın. Yaratıcın Umut'tur." },
+                        { role: "system", content: "Senin adın Void AI. Yazılımdan ve kodlamadan çok iyi anlayan samimi ve kanka diyerek konuşabilen bir yapay zekasın. Yaratıcın Umut'tur." },
                         { role: "user", content: message.content }
                     ]
                 })
