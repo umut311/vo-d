@@ -184,12 +184,12 @@ client.on('guildMemberAdd', async member => {
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
-    // GEMINI AI KONTROLÜ (Stabil gemini-pro modeli)
+    // GEMINI AI KONTROLÜ (Doğru ve güncel gemini-1.5-flash modeli)
     const isAiChannel = await AiChannel.findOne({ channelId: message.channel.id });
     if (isAiChannel && !message.content.startsWith('v!') && !message.content.startsWith('v')) {
         await message.channel.sendTyping();
         try {
-            const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
             const prompt = `Senin adın Void AI. Yazılımdan çok iyi anlayan samimi bir kankasın. Yaratıcın Umut'tur. Soru: ${message.content}`;
             
             const result = await model.generateContent(prompt);
