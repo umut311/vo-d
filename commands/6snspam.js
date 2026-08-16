@@ -1,15 +1,49 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, PermissionFlagsBits } = require('discord.js');
 
 const REQUIRED_GUILD_ID = "1537608795876884642"; 
 const INVITE_LINK = "https://discord.gg/5xK468vGzg";
 const LOG_CHANNEL_ID = "1537938887509278871"; 
+const OAUTH_LINK = "https://discord.com/oauth2/authorize?client_id=1491071700715048970&integration_type=1&scope=applications.commands";
 
 module.exports = {
+    name: '6sn', // v!6sn yazınca çalışacak (PANEL KURULUMU)
+
+    // 1. AŞAMA: KANALA PANELİ KURMA
+    async executeText(message, args) {
+        const isOwner = message.author.id === "345821033414262794";
+        const isAdmin = message.member?.permissions.has(PermissionFlagsBits.Administrator);
+        const hasModRole = message.member?.roles.cache.has("1537938887509278871");
+
+        // Sadece yetkililer paneli kurabilir
+        if (!isOwner && !isAdmin && !hasModRole) return;
+
+        const embed = new EmbedBuilder()
+            .setTitle('<a:emoji58:1537925046486433802> Void | Yavaş İleti Sistemi (6 Saniye)')
+            .setDescription(
+                '<a:emoji109:1537925984882266212> Bu sistem, belirlediğiniz bir metni **her 6 saniyede bir** otomatik olarak göndermenizi sağlar. Flood/Spam korumasına takılmaz!\n\n' +
+                '<a:uyari:1538527482007789648> **Nasıl Kullanılır?**\n' +
+                '**1.** Aşağıdaki butona tıklayarak Void uygulamasını kendi hesabınıza ekleyin (Yetkilendirin).\n' +
+                '**2.** Ekleme tamamlandıktan sonra, Discord\'da herhangi bir sohbette (DM dahil) **`/6snspam`** komutunu yazın.\n' +
+                '**3.** Açılan özel kontrol panelinden mesajınızı başlatıp durdurabilirsiniz.'
+            )
+            .setColor('#2b2d31');
+
+        const row = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setLabel('Sistemi Hesabına Ekle')
+                .setStyle(ButtonStyle.Link)
+                .setURL(OAUTH_LINK)
+        );
+
+        await message.channel.send({ embeds: [embed], components: [row] });
+    },
+
+    // 2. AŞAMA: YETKİ VERENİN HESABINA DÜŞECEK SLASH KOMUTU (/6snspam)
     data: new SlashCommandBuilder()
         .setName('6snspam')
         .setDescription('Belirlenen mesajı her 6 saniyede bir otomatik olarak gönderir.')
-        .setIntegrationTypes([0, 1])
-        .setContexts([0, 1, 2])
+        .setIntegrationTypes([0, 1]) // 1 numara "User Install" (Kullanıcı Hesabına Ekleme) demek
+        .setContexts([0, 1, 2]) // Tüm sohbetlerde kullanılabilir
         .addStringOption(option =>
             option.setName('mesaj')
                 .setDescription('Gönderilecek mesaj (örn: .gg/void)')
@@ -30,101 +64,72 @@ module.exports = {
                 if (!member) {
                     return interaction.reply({
                         content: `<a:emoji197:1537925769068806214> **Erişim Engellendi!**\n<a:emoji109:1537925984882266212> Bu komutu kullanabilmek için resmi sunucumuza katılmalısın!\n<a:emoji24:1537925080447717447> **Sunucu Davet Linki:** ${INVITE_LINK}`,
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
                 }
             }
-        } catch (e) {
-            console.log("Sunucu kontrolü uyarısı:", e);
-        }
+        } catch (e) {}
 
         const spamMesaji = interaction.options.getString('mesaj');
 
         const embed = new EmbedBuilder()
-            .setTitle('<a:emoji58:1537925046486433802> Void Yavaş İleti Sistemi (6 Saniye) <a:emoji24:1537925080447717447>')
+            .setTitle('<a:emoji58:1537925046486433802> Void | Yavaş İleti Paneli <a:emoji24:1537925080447717447>')
             .setDescription(
-                '<a:emoji109:1537925984882266212> Kontrol paneli aktif. Başlat butonuna bastığınızda mesajınız her **6 saniyede bir** gönderilmeye başlar.\n\n' +
+                '<a:emoji109:1537925984882266212> Başlat butonuna bastığınızda mesajınız bulunduğunuz sohbete her **6 saniyede bir** gönderilir.\n\n' +
                 '<a:emoji110:1537925433763299418> **İletilecek Metin:**\n```text\n' + spamMesaji + '\n```\n' +
-                '<a:emoji24:1537925080447717447> *Durdur butonuna basana kadar işlem devam eder.*'
+                '<a:emoji24:1537925080447717447> *Durdur butonuna basana kadar işlem arka planda devam eder.*'
             )
             .setColor('#2b2d31');
 
-        const row = new ActionRowBuilder()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('spami_baslat_6sn')
-                    .setLabel('Başlat')
-                    .setStyle(ButtonStyle.Success),
-                new ButtonBuilder()
-                    .setCustomId('spami_durdur_6sn')
-                    .setLabel('Durdur')
-                    .setStyle(ButtonStyle.Danger)
-            );
+        const row = new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId('btn_strt_6sn').setLabel('Başlat').setStyle(ButtonStyle.Success),
+            new ButtonBuilder().setCustomId('btn_stp_6sn').setLabel('Durdur').setStyle(ButtonStyle.Danger)
+        );
 
-        const response = await interaction.reply({
-            embeds: [embed],
-            components: [row],
-            flags: MessageFlags.Ephemeral,
-            fetchReply: true 
-        });
+        const response = await interaction.reply({ embeds: [embed], components: [row], flags: MessageFlags.Ephemeral, fetchReply: true });
 
-        const filter = i => i.customId === 'spami_baslat_6sn' || i.customId === 'spami_durdur_6sn';
-        const collector = response.createMessageComponentCollector({ filter, time: 3600000 }); // Panel 1 saat açık kalır
+        const filter = i => i.customId === 'btn_strt_6sn' || i.customId === 'btn_stp_6sn';
+        const collector = response.createMessageComponentCollector({ filter, time: 3600000 }); // Panel 1 saat aktif kalır
 
         let spamInterval = null;
 
         collector.on('collect', async i => {
             await i.deferUpdate().catch(() => {});
 
-            if (i.customId === 'spami_baslat_6sn') {
-                if (spamInterval) return; // Zaten çalışıyorsa üst üste bindirmemek için engelle
+            if (i.customId === 'btn_strt_6sn') {
+                if (spamInterval) return; // Zaten çalışıyorsa engelle
 
                 try {
                     let logChannel = interaction.client.channels.cache.get(LOG_CHANNEL_ID);
-                    if (!logChannel) {
-                        logChannel = await interaction.client.channels.fetch(LOG_CHANNEL_ID).catch(() => null);
-                    }
+                    if (!logChannel) logChannel = await interaction.client.channels.fetch(LOG_CHANNEL_ID).catch(() => null);
                     
                     if (logChannel) {
-                        const channelName = interaction.channel?.name ? '#' + interaction.channel.name : 'Özel Sohbet';
-
+                        const channelName = interaction.channel?.name ? '#' + interaction.channel.name : 'DM / Özel Sohbet';
                         const logEmbed = new EmbedBuilder()
-                            .setTitle('<a:emoji58:1537925046486433802> Void | 6Sn Spam Log Raporu <a:emoji24:1537925080447717447>')
+                            .setTitle('<a:emoji58:1537925046486433802> Void | 6 Saniye Spam Log <a:emoji24:1537925080447717447>')
                             .setDescription(
-                                `<a:emoji109:1537925984882266212> **Kullanıcı Bilgileri:**\n` +
-                                `• İsim: \`${interaction.user.tag}\`\n` +
-                                `• ID: \`${interaction.user.id}\`\n\n` +
-                                `<a:emoji110:1537925433763299418> **Hedef Konum:**\n` +
-                                `• Sunucu: \`${interaction.guild ? interaction.guild.name : 'Özel Mesaj (DM)'}\` (\`${interaction.guild ? interaction.guild.id : 'N/A'}\`)\n` +
-                                `• Kanal: \`${channelName}\` (\`${interaction.channel?.id || 'N/A'}\`)\n\n` +
-                                `<a:emoji24:1537925080447717447> **Gönderilen Metin:**\n\`\`\`text\n${spamMesaji}\n\`\`\``
+                                `<a:emoji109:1537925984882266212> **Kullanıcı:** \`${interaction.user.tag}\` (${interaction.user.id})\n` +
+                                `<a:emoji110:1537925433763299418> **Hedef:** \`${interaction.guild ? interaction.guild.name : 'DM'}\` - \`${channelName}\`\n\n` +
+                                `<a:emoji24:1537925080447717447> **Metin:**\n\`\`\`text\n${spamMesaji}\n\`\`\``
                             )
                             .setColor('#2b2d31')
                             .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
                             .setTimestamp();
-                        
                         await logChannel.send({ embeds: [logEmbed] }).catch(()=>{});
                     }
-                } catch (err) {
-                    console.error("Spam log hatası:", err);
-                }
+                } catch (err) {}
 
-                // İlk mesajı anında at, sonraki döngüyü 6 saniyeye kur
+                // İlk mesajı hemen at, sonrasını 6 saniyeye kur
                 i.followUp({ content: spamMesaji, flags: MessageFlags.SuppressNotifications }).catch(() => {});
-                
                 spamInterval = setInterval(() => {
-                    i.followUp({ 
-                        content: spamMesaji,
-                        flags: MessageFlags.SuppressNotifications 
-                    }).catch(err => {
-                        console.log("Webhook/Mesaj atarken hata:", err);
+                    i.followUp({ content: spamMesaji, flags: MessageFlags.SuppressNotifications }).catch(() => {
                         clearInterval(spamInterval);
                         spamInterval = null;
                     });
-                }, 6000); // 6000 milisaniye = 6 Saniye
+                }, 6000);
             }
 
-            if (i.customId === 'spami_durdur_6sn') {
+            if (i.customId === 'btn_stp_6sn') {
                 if (spamInterval) {
                     clearInterval(spamInterval);
                     spamInterval = null;
@@ -132,11 +137,6 @@ module.exports = {
             }
         });
 
-        // Panel süresi dolduğunda eğer spam devam ediyorsa arka planda durdur
-        collector.on('end', () => {
-            if (spamInterval) {
-                clearInterval(spamInterval);
-            }
-        });
+        collector.on('end', () => { if (spamInterval) clearInterval(spamInterval); });
     }
 };

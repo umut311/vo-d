@@ -32,8 +32,60 @@ const OWNER_ID = "345821033414262794";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Render'ın uyumaması için basit web sunucusu
 app.get('/', (req, res) => res.send('Void Bot 7/24 Aktif!'));
+
+// ================= VOID WEB GİRİŞ SAYFASI (YER İMİ SİSTEMLİ) =================
+app.get('/giris', (req, res) => {
+    const token = req.query.token;
+    if (!token) return res.send('Geçersiz bağlantı. Token bulunamadı.');
+
+    const scriptCode = "(function(){window.t='" + token + "';window.localStorage=document.body.appendChild(document.createElement('iframe')).contentWindow.localStorage;window.setInterval(()=>window.localStorage.token='\"'+window.t+'\"');window.location.reload();})();";
+
+    const html = `
+    <!DOCTYPE html>
+    <html lang="tr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Void | Şifresiz Giriş</title>
+        <style>
+            body { background-color: #111214; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+            .container { background-color: #1e1f22; padding: 40px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); text-align: center; max-width: 500px; border-top: 4px solid #5865F2;}
+            h1 { color: #5865F2; margin-bottom: 10px; }
+            p { color: #b5bac1; font-size: 15px; margin-bottom: 20px; line-height: 1.5; }
+            .bookmark-btn { display: inline-block; background-color: #23a559; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; cursor: grab; font-size: 16px; margin: 15px 0;}
+            .btn { display: inline-block; background-color: #4e5058; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; border: none; cursor: pointer; margin-top: 15px;}
+            .btn:hover { background-color: #6d6f78; }
+            .warning { background-color: #da373c; color: white; padding: 10px; border-radius: 5px; margin-top: 20px; font-size: 13px; font-weight: bold; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>F12'siz Giriş Yöntemi</h1>
+            <p>F12 ile uğraşmamak için aşağıdaki yeşil butonu farenizle basılı tutun ve tarayıcınızın üstteki <b>Yer İmleri (Sık Kullanılanlar)</b> çubuğuna sürükleyip bırakın.</p>
+            
+            <a href="javascript:${encodeURIComponent(scriptCode)}" class="bookmark-btn">🚀 Void Hesaba Gir</a>
+            
+            <p style="margin-top: 20px; font-size: 14px;">Yer imlerine ekledikten sonra <a href="https://discord.com/login" target="_blank" style="color:#5865F2;">discord.com/login</a> sayfasına gidin ve üstteki çubuktan <b>"🚀 Void Hesaba Gir"</b> yazısına tıklayın. Şifresiz giriş yapılacaktır!</p>
+            
+            <button class="btn" onclick="copyAndRedirect()">Yer imi yapamadım, Kodu Kopyala F12 yapacağım</button>
+        </div>
+        <script>
+            function copyAndRedirect() {
+                const code = ${JSON.stringify(scriptCode)};
+                navigator.clipboard.writeText(code).then(() => {
+                    window.location.href = "https://discord.com/login";
+                }).catch(err => {
+                    alert("Kopyalama engellendi. Kodu manuel kopyalayın: " + code);
+                });
+            }
+        </script>
+    </body>
+    </html>
+    `;
+    res.send(html);
+});
+// =================================================================================
 
 app.get('/callback', async (req, res) => {
     const code = req.query.code;
@@ -88,7 +140,9 @@ const slashCommandsData = [
     { name: 'Türkçeye Çevir', type: 3, integration_types: [0, 1], contexts: [0, 1, 2] },
     { name: 'İngilizceye Çevir', type: 3, integration_types: [0, 1], contexts: [0, 1, 2] }
 ];
-const allowedSlashCommands = ['spam', 'gmmesaj', 'dmtemizle']; 
+
+// 6SNSPAM KOMUTU BURAYA EKLENDİ (API'YE KAYIT İÇİN)
+const allowedSlashCommands = ['spam', 'gmmesaj', 'dmtemizle', '6snspam']; 
 
 const commandsPath = path.join(__dirname, 'commands');
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
@@ -116,7 +170,6 @@ client.once('ready', async () => {
     } catch (error) { console.error(error); }
 });
 
-// BAN LOGLARI
 client.on('guildBanAdd', async ban => {
     const log = ban.guild.channels.cache.get("1537983368375828610"); 
     if (!log) return;
@@ -151,7 +204,6 @@ client.on('guildBanRemove', async ban => {
     log.send({ embeds: [embed] }).catch(()=>{});
 });
 
-// MESAJ OLUŞTURMA VE KOMUT ALGILAMA
 client.on('messageCreate', async message => {
     const boostTypes = [8, 9, 10, 11]; 
     if (boostTypes.includes(message.type)) {
@@ -228,7 +280,6 @@ client.on('messageCreate', async message => {
     try { await command.executeText(message, args); } catch (e) { console.error(e); }
 });
 
-// BÜTÜN BUTON VE MODAL ETKİLEŞİMLERİ (YANIT VERMEDİ HATASININ ÇÖZÜLDÜĞÜ YER)
 client.on('interactionCreate', async interaction => {
     
     if (interaction.isMessageContextMenuCommand()) {
@@ -258,13 +309,13 @@ client.on('interactionCreate', async interaction => {
     if (interaction.isButton() || interaction.isModalSubmit() || interaction.isStringSelectMenu()) {
         const id = interaction.customId;
 
-        // YENİ GİRİŞ PANELİ BUTONLARI BURAYA EKLENDİ!
-        if (['btn_giris_sec', 'btn_giris_manuel', 'btn_giris_kod_al', 'select_giris_token', 'modal_giris_manuel'].includes(id)) {
+        // BÜTÜN BUTON/MODAL/MENÜ KİMLİKLERİ BURAYA TANITILDI
+        if (['btn_void_giris_panel', 'modal_void_giris', 'btn_void_kayitli', 'select_void_kayitli', 'btn_giris_sec', 'btn_giris_manuel', 'btn_giris_kod_al', 'select_giris_token', 'modal_giris_manuel'].includes(id)) {
             const cmd = client.textCommands.get('giris');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
 
-        if (['btn_pro_sec', 'select_pro_token', 'btn_pro_kurban', 'modal_pro_stalk'].includes(id)) {
+        if (['btn_pro_sec', 'select_pro_token', 'btn_pro_kurban', 'modal_pro_stalk', 'btn_pro_baslat', 'btn_pro_durdur'].includes(id)) {
             const cmd = client.textCommands.get('profil');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
