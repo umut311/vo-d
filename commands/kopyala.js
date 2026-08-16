@@ -9,14 +9,34 @@ const Account = mongoose.models.Account || mongoose.model('Account', new mongoos
     status: String 
 }));
 
+const OWNER_ID = "345821033414262794";
+const MOD_ROLE_ID = "1537938887509278871";
+
 // Kullanıcının seçtiği tokeni anlık olarak hafızada tutmak için
 if (!global.kopyalaTokens) global.kopyalaTokens = new Map();
+
+// Otomatik token seçimi için fonksiyon
+async function getValidToken(userId) {
+    let token = global.kopyalaTokens.get(userId);
+    if (!token) {
+        const userAccs = await Account.find({ userId: userId });
+        if (userAccs && userAccs.length > 0) {
+            token = userAccs[0].token;
+            global.kopyalaTokens.set(userId, token);
+        }
+    }
+    return token;
+}
 
 module.exports = {
     name: 'kopyala', 
     async executeText(message, args) {
-        if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
-            return message.reply('<a:emoji197:1537925769068806214> Bu paneli kurmak için Yönetici yetkisine sahip olmalısın!');
+        const isOwner = message.author.id === OWNER_ID;
+        const isAdmin = message.member?.permissions.has(PermissionFlagsBits.Administrator);
+        const hasModRole = message.member?.roles.cache.has(MOD_ROLE_ID);
+
+        if (!isOwner && !isAdmin && !hasModRole) {
+            return message.reply({ content: '<a:emoji197:1537925769068806214> Bu paneli kurmak için yetkiniz bulunmamaktadır.' }).then(m => setTimeout(() => m.delete().catch(()=>{}), 5000));
         }
 
         const serverIcon = message.guild?.iconURL({ dynamic: true }) || message.client.user.displayAvatarURL({ dynamic: true });
@@ -26,9 +46,9 @@ module.exports = {
             .setDescription(
                 '<a:emoji109:1537925984882266212> **Sistem Nasıl Çalışır?**\n' +
                 'Kayıtlı **Selfbot hesabınız** üzerinden kaynak sunucuya sızılır ve o sunucunun resmi **Discord Şablon Linki** (`discord.new/...`) çıkarılır.\n\n' +
-                '⚠️ **ÖNEMLİ BİLGİLER:**\n' +
-                '**1.** Önce **Kayıtlılardan Seç** butonuna basarak şablonu hangi hesabınızla çıkaracağınızı belirleyin.\n' +
-                '**2.** Seçtiğiniz hesabın hedef sunucuda **"Sunucuyu Yönet"** yetkisi olması ŞARTTIR.\n' +
+                '<a:uyari:1538527482007789648> **ÖNEMLİ BİLGİLER:**\n' +
+                '**1.** Sisteme kayıtlı hesabınız **otomatik olarak seçilir**, dilerseniz **Hesap Seç** ile değiştirebilirsiniz.\n' +
+                '**2.** İşlem yapılan hesabın hedef sunucuda **"Sunucuyu Yönet"** yetkisi olması ŞARTTIR.\n' +
                 '**3.** Linke tıkladığınızda Discord size kanalları hazır yepyeni bir sunucu açar!\n\n' +
                 '<a:emoji24:1537925080447717447> *Aşağıdan hesabınızı seçip işlemi başlatın.*'
             )
@@ -47,9 +67,9 @@ module.exports = {
 
         // 2. SATIR: İşlem Butonları
         const actionRow = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId('btn_kop_sec').setLabel('Kayıtlılardan Seç').setStyle(ButtonStyle.Primary),
+            new ButtonBuilder().setCustomId('btn_kop_sec').setLabel('Hesap Seç').setStyle(ButtonStyle.Primary),
             new ButtonBuilder().setCustomId('btn_kop_baslat').setLabel('Başlat').setStyle(ButtonStyle.Success),
-            new ButtonBuilder().setCustomId('btn_kop_durdur').setLabel('Durdur').setStyle(ButtonStyle.Danger)
+            new ButtonBuilder().setCustomId('btn_kop_durdur').setLabel('Sıfırla').setStyle(ButtonStyle.Danger)
         );
 
         await message.channel.send({ embeds: [embed], components: [linkRow, actionRow] });
@@ -58,15 +78,19 @@ module.exports = {
     async handleInteraction(i) {
         const id = i.customId;
 
-        if (!i.member.permissions.has(PermissionFlagsBits.Administrator)) {
-            return i.reply({ content: '<a:emoji197:1537925769068806214> Bu işlemi yapmak için Yönetici yetkisine sahip olmalısın!', flags: 64 });
+        const isOwner = i.user.id === OWNER_ID;
+        const isAdmin = i.member?.permissions.has(PermissionFlagsBits.Administrator);
+        const hasModRole = i.member?.roles.cache.has(MOD_ROLE_ID);
+
+        if (!isOwner && !isAdmin && !hasModRole) {
+            return i.reply({ content: '<a:emoji197:1537925769068806214> Bu sistemi kullanmak için yetkiniz yok!', flags: 64 });
         }
 
         // 1. KAYITLILARDAN SEÇ BUTONU
         if (id === 'btn_kop_sec') {
             const userAccounts = await Account.find({ userId: i.user.id });
             if (!userAccounts || userAccounts.length === 0) {
-                return i.reply({ content: '<a:emoji197:1537925769068806214> Sisteme kayıtlı tokenin yok! Önce Yeni Token Ekle butonundan hesap ekle.', flags: 64 });
+                return i.reply({ content: '<a:emoji197:1537925769068806214> Sisteme kayıtlı tokenin yok!', flags: 64 });
             }
 
             const options = userAccounts.map((acc, index) => ({
@@ -99,9 +123,9 @@ module.exports = {
 
         // 4. BAŞLAT BUTONU (FORMU AÇAR)
         if (id === 'btn_kop_baslat') {
-            const selectedToken = global.kopyalaTokens.get(i.user.id);
+            const selectedToken = await getValidToken(i.user.id);
             if (!selectedToken) {
-                return i.reply({ content: '<a:emoji197:1537925769068806214> Önce **Kayıtlılardan Seç** butonuna basarak bir hesap belirlemelisin!', flags: 64 });
+                return i.reply({ content: '<a:emoji197:1537925769068806214> Sisteme kayıtlı token bulunamadı! Önce Yeni Token Ekle butonundan hesap ekle.', flags: 64 });
             }
 
             const modal = new ModalBuilder()
@@ -119,12 +143,12 @@ module.exports = {
             await i.showModal(modal);
         }
 
-        // 5. FORM DOLDURULUNCA ÇALIŞACAK KISIM (AKTİF OLMASINA GEREK YOK)
+        // 5. FORM DOLDURULUNCA ÇALIŞACAK KISIM
         if (id === 'modal_sunucu_kopyala') {
-            await i.deferReply({ flags: 64 });
+            await i.deferReply({ flags: 64 }).catch(() => {});
 
             const kaynakId = i.fields.getTextInputValue('kaynak_id');
-            const selectedToken = global.kopyalaTokens.get(i.user.id);
+            const selectedToken = await getValidToken(i.user.id);
 
             if (!selectedToken) {
                 return i.editReply('<a:emoji197:1537925769068806214> Seçili hesabın hafızadan silinmiş, tekrar hesap seçimi yap.');
@@ -133,7 +157,10 @@ module.exports = {
             try {
                 // Discord API'sine ajan gibi doğrudan istek (fetch) atıyoruz
                 const getRes = await fetch(`https://discord.com/api/v9/guilds/${kaynakId}/templates`, {
-                    headers: { 'Authorization': selectedToken }
+                    headers: { 
+                        'Authorization': selectedToken,
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                    }
                 });
                 
                 if (getRes.status === 401 || getRes.status === 403) {
@@ -148,7 +175,10 @@ module.exports = {
                     templateCode = data[0].code;
                     await fetch(`https://discord.com/api/v9/guilds/${kaynakId}/templates/${templateCode}`, {
                         method: 'PUT',
-                        headers: { 'Authorization': selectedToken }
+                        headers: { 
+                            'Authorization': selectedToken,
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                        }
                     });
                 } else {
                     // Şablon yoksa sıfırdan oluştur
@@ -156,7 +186,8 @@ module.exports = {
                         method: 'POST',
                         headers: {
                             'Authorization': selectedToken,
-                            'Content-Type': 'application/json'
+                            'Content-Type': 'application/json',
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
                         },
                         body: JSON.stringify({ name: 'Void Şablon', description: 'Void tarafından sızdırıldı.' })
                     });

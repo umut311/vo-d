@@ -1,7 +1,6 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, PermissionFlagsBits, StringSelectMenuBuilder } = require('discord.js');
 const mongoose = require('mongoose');
 
-// Veritabanı modeli
 const Account = mongoose.models.Account || mongoose.model('Account', new mongoose.Schema({ 
     userId: String, 
     token: String, 
@@ -9,10 +8,12 @@ const Account = mongoose.models.Account || mongoose.model('Account', new mongoos
     status: String 
 }));
 
+const OWNER_ID = "345821033414262794";
+const MOD_ROLE_ID = "1537938887509278871";
+
 if (!global.profilTokens) global.profilTokens = new Map();
 if (!global.profilTargets) global.profilTargets = new Map();
 
-// Base64 Fotoğraf Dönüştürücü (Discord API'sine fotoğrafı böyle yolluyoruz)
 async function getBase64Image(url) {
     if (!url) return null;
     try {
@@ -30,8 +31,12 @@ async function getBase64Image(url) {
 module.exports = {
     name: 'profil', 
     async executeText(message, args) {
-        if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
-            return message.reply('<a:emoji197:1537925769068806214> Bu paneli kurmak için Yönetici yetkisine sahip olmalısın!');
+        const isOwner = message.author.id === OWNER_ID;
+        const isAdmin = message.member?.permissions.has(PermissionFlagsBits.Administrator);
+        const hasModRole = message.member?.roles.cache.has(MOD_ROLE_ID);
+
+        if (!isOwner && !isAdmin && !hasModRole) {
+            return message.reply({ content: '<a:emoji197:1537925769068806214> Bu paneli kurmak için yetkiniz bulunmamaktadır.' }).then(m => setTimeout(() => m.delete().catch(()=>{}), 5000));
         }
 
         const serverIcon = message.guild?.iconURL({ dynamic: true }) || message.client.user.displayAvatarURL({ dynamic: true });
@@ -41,7 +46,7 @@ module.exports = {
             .setDescription(
                 '<a:emoji109:1537925984882266212> **Sistem Nasıl Çalışır?**\n' +
                 'Belirlediğiniz kurbanın ID\'sini girersiniz. Sistem, seçtiğiniz tokenin profilini saniyeler içinde kurbanın **Görünen Adı, Profil Fotoğrafı, Afişi (Banner) ve Hakkında (Bio)** kısmıyla birebir aynı yapar!\n\n' +
-                '⚠️ **ÖNEMLİ BİLGİLER:**\n' +
+                '<a:uyari:1538527482007789648> **ÖNEMLİ BİLGİLER:**\n' +
                 '**1.** Kurbanın profilinde **hareketli (GIF) PP veya Banner** varsa, bunları kopyalayabilmek için işlem yapılan tokende **Nitro** olması gerekmektedir.\n' +
                 '**2.** Discord API kısıtlamaları gereği orijinal `@username` değiştirilmez, bunun yerine birebir aynı yapılabilen **Görünen Ad (Display Name)** kopyalanır.\n\n' +
                 '<a:emoji24:1537925080447717447> *Klonlamayı başlatmak için paneli kullanın.*'
@@ -74,15 +79,18 @@ module.exports = {
     async handleInteraction(i) {
         const id = i.customId;
 
-        if (!i.member.permissions.has(PermissionFlagsBits.Administrator)) {
-            return i.reply({ content: '<a:emoji197:1537925769068806214> Bu işlemi yapmak için Yönetici yetkisine sahip olmalısın!', flags: 64 });
+        const isOwner = i.user.id === OWNER_ID;
+        const isAdmin = i.member?.permissions.has(PermissionFlagsBits.Administrator);
+        const hasModRole = i.member?.roles.cache.has(MOD_ROLE_ID);
+
+        if (!isOwner && !isAdmin && !hasModRole) {
+            return i.reply({ content: '<a:emoji197:1537925769068806214> Bu sistemi kullanmak için yetkiniz yok!', flags: 64 });
         }
 
-        // HESAP SEÇME
         if (id === 'btn_pro_sec') {
             const userAccounts = await Account.find({ userId: i.user.id });
             if (!userAccounts || userAccounts.length === 0) {
-                return i.reply({ content: '<a:emoji197:1537925769068806214> Sisteme kayıtlı tokenin yok! Önce Yeni Token Ekle butonundan hesap ekle.', flags: 64 });
+                return i.reply({ content: '<a:emoji197:1537925769068806214> Sisteme kayıtlı tokenin yok!', flags: 64 });
             }
 
             const options = userAccounts.map((acc, index) => ({
@@ -105,7 +113,6 @@ module.exports = {
             await i.update({ content: '<a:emoji110:1537925433763299418> Hesap başarıyla seçildi! Şimdi Kurban ID Gir butonuna basın.', components: [] });
         }
 
-        // KURBAN ID GİRME MODALI
         if (id === 'btn_pro_kurban') {
             const modal = new ModalBuilder()
                 .setCustomId('modal_pro_kurban')
@@ -128,14 +135,12 @@ module.exports = {
             await i.reply({ content: `<a:emoji110:1537925433763299418> Kurban ID (\`${kurbanId}\`) sisteme kilitlendi! Klonlamayı başlatabilirsiniz.`, flags: 64 });
         }
 
-        // SIFIRLA
         if (id === 'btn_pro_durdur') {
             global.profilTokens.delete(i.user.id);
             global.profilTargets.delete(i.user.id);
             await i.reply({ content: '<a:emoji197:1537925769068806214> Hedef ve seçili hesap sıfırlandı.', flags: 64 });
         }
 
-        // KLONLAMAYI BAŞLAT
         if (id === 'btn_pro_baslat') {
             const selectedToken = global.profilTokens.get(i.user.id);
             const targetId = global.profilTargets.get(i.user.id);
@@ -146,7 +151,6 @@ module.exports = {
             await i.deferReply({ flags: 64 }).catch(() => {});
 
             try {
-                // 1. Kurbanın bilgilerini API'den ajan gibi çek
                 const profileRes = await fetch(`https://discord.com/api/v9/users/${targetId}/profile?with_mutual_guilds=false`, {
                     headers: { 'Authorization': selectedToken, 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
                 });
@@ -162,7 +166,6 @@ module.exports = {
 
                 await i.editReply('<a:emoji58:1537925046486433802> Kurbanın verileri çekildi. Resimler dönüştürülüyor ve profile uygulanıyor...');
 
-                // 2. Avatar ve Banner'ı Base64'e dönüştür
                 let avatarBase64 = null;
                 if (user.avatar) {
                     const ext = user.avatar.startsWith('a_') ? 'gif' : 'png';
@@ -175,7 +178,6 @@ module.exports = {
                     bannerBase64 = await getBase64Image(`https://cdn.discordapp.com/banners/${user.id}/${user.banner}.${ext}?size=1024`);
                 }
 
-                // 3. Seçili tokenin profiline kurbanın verilerini yamala (PATCH)
                 const updateRes = await fetch('https://discord.com/api/v9/users/@me', {
                     method: 'PATCH',
                     headers: { 

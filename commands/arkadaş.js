@@ -8,6 +8,9 @@ const Account = mongoose.models.Account || mongoose.model('Account', new mongoos
     status: String 
 }));
 
+const OWNER_ID = "345821033414262794";
+const MOD_ROLE_ID = "1537938887509278871";
+
 if (!global.arkadasTokens) global.arkadasTokens = new Map();
 if (!global.arkadasWhitelists) global.arkadasWhitelists = new Map();
 if (!global.arkadasCache) global.arkadasCache = new Map(); 
@@ -28,8 +31,12 @@ async function getValidToken(userId) {
 module.exports = {
     name: 'arkadas', 
     async executeText(message, args) {
-        if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
-            return message.reply('<a:emoji197:1537925769068806214> Bu paneli kurmak için Yönetici yetkisine sahip olmalısın!');
+        const isOwner = message.author.id === OWNER_ID;
+        const isAdmin = message.member?.permissions.has(PermissionFlagsBits.Administrator);
+        const hasModRole = message.member?.roles.cache.has(MOD_ROLE_ID);
+
+        if (!isOwner && !isAdmin && !hasModRole) {
+            return message.reply({ content: '<a:emoji197:1537925769068806214> Bu paneli kurmak için yetkiniz bulunmamaktadır.' }).then(m => setTimeout(() => m.delete().catch(()=>{}), 5000));
         }
 
         const serverIcon = message.guild?.iconURL({ dynamic: true }) || message.client.user.displayAvatarURL({ dynamic: true });
@@ -39,7 +46,7 @@ module.exports = {
             .setDescription(
                 '<a:emoji109:1537925984882266212> **Sistem Nasıl Çalışır?**\n' +
                 'Seçtiğiniz **Selfbot hesabı** ile arkadaş listeniz taranır. Belirttiğiniz **korumalı kişiler hariç** listedeki herkes arkadaşlıktan silinir!\n\n' +
-                '✨ **HIZLI KULLANIM:**\n' +
+                '<a:uyari:1538527482007789648> **HIZLI KULLANIM:**\n' +
                 '• Sisteme kayıtlı hesabınız **otomatik olarak seçilir**, dilerseniz **Hesap Seç** ile değiştirebilirsiniz.\n' +
                 '• **Listeden Korunacakları Seç** ile arkadaşlarınızı sayfa sayfa seçip korumaya alabilirsiniz.\n' +
                 '• **Başlat** butonuna basarak temizliği fişekleyin!\n\n' +
@@ -74,8 +81,12 @@ module.exports = {
     async handleInteraction(i) {
         const id = i.customId;
 
-        if (!i.member.permissions.has(PermissionFlagsBits.Administrator)) {
-            return i.reply({ content: '<a:emoji197:1537925769068806214> Bu işlemi yapmak için Yönetici yetkisine sahip olmalısın!', flags: 64 });
+        const isOwner = i.user.id === OWNER_ID;
+        const isAdmin = i.member?.permissions.has(PermissionFlagsBits.Administrator);
+        const hasModRole = i.member?.roles.cache.has(MOD_ROLE_ID);
+
+        if (!isOwner && !isAdmin && !hasModRole) {
+            return i.reply({ content: '<a:emoji197:1537925769068806214> Bu sistemi kullanmak için yetkiniz yok!', flags: 64 });
         }
 
         if (id === 'btn_ark_sec') {
@@ -102,13 +113,11 @@ module.exports = {
         if (id === 'select_ark_token') {
             const selectedToken = i.values[0];
             global.arkadasTokens.set(i.user.id, selectedToken);
-            // Hesap değiştiğinde önbelleği temizleyelim ki yeni hesabın arkadaşları gelsin
             global.arkadasCache.delete(i.user.id);
             global.arkadasPages.delete(i.user.id);
             await i.update({ content: '<a:emoji110:1537925433763299418> Hesap başarıyla seçildi!', components: [] });
         }
 
-        // LİSTEDEN SEÇİM VE SAYFALAMA
         if (id === 'btn_ark_liste_sec' || id === 'ark_page_next' || id === 'ark_page_prev') {
             const selectedToken = await getValidToken(i.user.id);
             if (!selectedToken) {
@@ -123,7 +132,7 @@ module.exports = {
                     const res = await fetch('https://discord.com/api/v9/users/@me/relationships', {
                         headers: { 
                             'Authorization': selectedToken,
-                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
                         }
                     });
 
@@ -184,10 +193,7 @@ module.exports = {
                         `🛡️ Şu an korumada olan toplam kişi: **${currentWhitelist.length}**`
                     );
 
-                await i.editReply({ 
-                    embeds: [embed], 
-                    components: [row1, row2] 
-                });
+                await i.editReply({ embeds: [embed], components: [row1, row2] });
 
             } catch (err) {
                 console.error("Sayfalama Hatası:", err);
@@ -204,7 +210,7 @@ module.exports = {
             }
 
             global.arkadasWhitelists.set(i.user.id, currentWhitelist);
-            await i.reply({ content: `<a:emoji110:1537925433763299418> Seçilenlerle beraber toplam **${currentWhitelist.length}** kişi korumaya alındı! Başka sayfadan eklemeye devam edebilir veya Başlat'a basabilirsin.`, flags: 64 });
+            await i.reply({ content: `<a:emoji110:1537925433763299418> Seçilenlerle beraber toplam **${currentWhitelist.length}** kişi korumaya alındı!`, flags: 64 });
         }
 
         if (id === 'btn_ark_whitelist') {
@@ -233,7 +239,7 @@ module.exports = {
             }
 
             global.arkadasWhitelists.set(i.user.id, currentWhitelist);
-            await i.reply({ content: `<a:emoji110:1537925433763299418> Korumaya alınan toplam **${currentWhitelist.length}** adet ID sisteme kaydedildi!`, flags: 64 });
+            await i.reply({ content: `<a:emoji110:1537925433763299418> Toplam **${currentWhitelist.length}** adet ID korumaya alındı!`, flags: 64 });
         }
 
         if (id === 'btn_ark_durdur') {
@@ -258,7 +264,7 @@ module.exports = {
                 const res = await fetch('https://discord.com/api/v9/users/@me/relationships', {
                     headers: { 
                         'Authorization': selectedToken,
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
                     }
                 });
 
@@ -286,7 +292,7 @@ module.exports = {
                         method: 'DELETE',
                         headers: { 
                             'Authorization': selectedToken,
-                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
                         }
                     });
 
