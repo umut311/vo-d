@@ -40,7 +40,7 @@ module.exports = {
                 '<a:emoji109:1537925984882266212> **Sistem Nasıl Çalışır?**\n' +
                 'Seçtiğiniz **Selfbot hesabı** ile arkadaş listeniz taranır. Belirttiğiniz **korumalı kişiler hariç** listedeki herkes arkadaşlıktan silinir!\n\n' +
                 '✨ **HIZLI KULLANIM:**\n' +
-                '• Sisteme kayıtlı hesabınız **otomatik olarak seçilir**.\n' +
+                '• Sisteme kayıtlı hesabınız **otomatik olarak seçilir**, dilerseniz **Hesap Seç** ile değiştirebilirsiniz.\n' +
                 '• **Listeden Korunacakları Seç** ile arkadaşlarınızı sayfa sayfa seçip korumaya alabilirsiniz.\n' +
                 '• **Başlat** butonuna basarak temizliği fişekleyin!\n\n' +
                 '<a:emoji24:1537925080447717447> *Aşağıdaki butonları kullanarak paneli yönetin.*'
@@ -58,8 +58,7 @@ module.exports = {
         );
 
         const actionRow1 = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId('btn_ark_sec').setLabel('Hesap Değiş').setStyle(ButtonStyle.Primary),
-            new ButtonBuilder().setCustomId('btn_ark_gor').setLabel('Arkadaşları Gör').setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('btn_ark_sec').setLabel('Hesap Seç').setStyle(ButtonStyle.Primary),
             new ButtonBuilder().setCustomId('btn_ark_liste_sec').setLabel('Listeden Korunacakları Seç').setStyle(ButtonStyle.Success)
         );
 
@@ -103,7 +102,10 @@ module.exports = {
         if (id === 'select_ark_token') {
             const selectedToken = i.values[0];
             global.arkadasTokens.set(i.user.id, selectedToken);
-            await i.update({ content: '<a:emoji110:1537925433763299418> Hesap başarıyla değiştirildi ve seçildi!', components: [] });
+            // Hesap değiştiğinde önbelleği temizleyelim ki yeni hesabın arkadaşları gelsin
+            global.arkadasCache.delete(i.user.id);
+            global.arkadasPages.delete(i.user.id);
+            await i.update({ content: '<a:emoji110:1537925433763299418> Hesap başarıyla seçildi!', components: [] });
         }
 
         // LİSTEDEN SEÇİM VE SAYFALAMA
@@ -126,7 +128,7 @@ module.exports = {
                     });
 
                     if (!res.ok) {
-                        return i.editReply(`<a:emoji197:1537925769068806214> API Hatası! Kod: ${res.status}. Token geçersiz veya yetkisiz.`);
+                        return i.editReply(`<a:emoji197:1537925769068806214> API Hatası! Kod: ${res.status}. Token geçersiz olabilir.`);
                     }
 
                     const relationships = await res.json();
@@ -203,56 +205,6 @@ module.exports = {
 
             global.arkadasWhitelists.set(i.user.id, currentWhitelist);
             await i.reply({ content: `<a:emoji110:1537925433763299418> Seçilenlerle beraber toplam **${currentWhitelist.length}** kişi korumaya alındı! Başka sayfadan eklemeye devam edebilir veya Başlat'a basabilirsin.`, flags: 64 });
-        }
-
-        if (id === 'btn_ark_gor') {
-            const selectedToken = await getValidToken(i.user.id);
-            if (!selectedToken) {
-                return i.reply({ content: '<a:emoji197:1537925769068806214> Sisteme kayıtlı token bulunamadı!', flags: 64 });
-            }
-
-            await i.deferReply({ flags: 64 }).catch(() => {});
-
-            try {
-                const res = await fetch('https://discord.com/api/v9/users/@me/relationships', {
-                    headers: { 
-                        'Authorization': selectedToken,
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-                    }
-                });
-
-                if (!res.ok) {
-                    return i.editReply(`<a:emoji197:1537925769068806214> API Hatası! Kod: ${res.status}. Token geçersiz olabilir.`);
-                }
-
-                const relationships = await res.json();
-                const friends = relationships.filter(r => r.type === 1);
-
-                if (!friends || friends.length === 0) {
-                    return i.editReply('<a:emoji197:1537925769068806214> Bu hesabın arkadaş listesi boş.');
-                }
-
-                let textList = friends.map(f => {
-                    const avatarHash = f.user.avatar;
-                    const avatarUrl = avatarHash 
-                        ? `https://cdn.discordapp.com/avatars/${f.user.id}/${avatarHash}.png` 
-                        : `https://cdn.discordapp.com/embed/avatars/${(Number(f.user.id) >> 22) % 6}.png`;
-                    
-                    return `• <@${f.user.id}> | **${f.user.username}** (\`${f.user.id}\`) - [Resmi Gör](${avatarUrl})`;
-                }).join('\n');
-                
-                if (textList.length > 1950) {
-                    textList = textList.substring(0, 1900) + '\n... (Liste çok uzun olduğu için kısaltıldı)';
-                }
-
-                await i.editReply({
-                    content: `<a:emoji110:1537925433763299418> **Mevcut Arkadaş Listesi (${friends.length} kişi):**\n\n${textList}`
-                });
-
-            } catch (err) {
-                console.error("Arkadaşları Listeleme Hatası:", err);
-                await i.editReply('<a:emoji197:1537925769068806214> Arkadaş listesi alınırken hata oluştu.');
-            }
         }
 
         if (id === 'btn_ark_whitelist') {
