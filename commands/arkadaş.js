@@ -27,7 +27,7 @@ module.exports = {
                 'Seçtiğiniz **Selfbot hesabı** ile arkadaş listeniz taranır. Belirttiğiniz **korumalı ID\'ler hariç** listedeki herkes arkadaşlıktan silinir!\n\n' +
                 '⚠️ **NASIL KULLANILIR?**\n' +
                 '**1.** **Kayıtlılardan Seç** butonu ile temizliği yapacak hesabı seçin.\n' +
-                '**2.** **Arkadaşları Gör** butonuna basarak mevcut tüm arkadaşlarınızı ve ID\'lerini kolayca kopyalayabilirsiniz.\n' +
+                '**2.** **Arkadaşları Gör** butonuna basarak avatarları, isimleri ve ID\'leri görüntüleyin.\n' +
                 '**3.** **Korunacak ID Gir** butonuna basarak silinmesini istemediğiniz kişilerin ID\'lerini yazın.\n' +
                 '**4.** **Başlat** butonuna basarak temizliği fişekleyin!\n\n' +
                 '<a:emoji24:1537925080447717447> *Aşağıdaki butonları kullanarak paneli yönetin.*'
@@ -92,6 +92,7 @@ module.exports = {
             await i.update({ content: '<a:emoji110:1537925433763299418> Hesap başarıyla seçildi!', components: [] });
         }
 
+        // ARKADAŞLARI GÖR (AVATAR BAĞLANTISI VE PROFİL KARTI İLE)
         if (id === 'btn_ark_gor') {
             const selectedToken = global.arkadasTokens.get(i.user.id);
             if (!selectedToken) {
@@ -116,14 +117,21 @@ module.exports = {
                     return i.editReply('<a:emoji197:1537925769068806214> Bu hesabın arkadaş listesi boş.');
                 }
 
-                let textList = friends.map(f => `${f.user.username} - ${f.user.id}`).join('\n');
+                let textList = friends.map(f => {
+                    const avatarHash = f.user.avatar;
+                    const avatarUrl = avatarHash 
+                        ? `https://cdn.discordapp.com/avatars/${f.user.id}/${avatarHash}.png` 
+                        : `https://cdn.discordapp.com/embed/avatars/${(Number(f.user.id) >> 22) % 6}.png`;
+                    
+                    return `• <@${f.user.id}> | **${f.user.username}** (\`${f.user.id}\`) - [Resmi Gör](${avatarUrl})`;
+                }).join('\n');
                 
                 if (textList.length > 1950) {
                     textList = textList.substring(0, 1900) + '\n... (Liste çok uzun olduğu için kısaltıldı)';
                 }
 
                 await i.editReply({
-                    content: `<a:emoji110:1537925433763299418> **Mevcut Arkadaş Listesi (${friends.length} kişi):**\n\`\`\`text\n${textList}\n\`\`\``
+                    content: `<a:emoji110:1537925433763299418> **Mevcut Arkadaş Listesi (${friends.length} kişi):**\n\n${textList}`
                 });
 
             } catch (err) {
