@@ -120,10 +120,10 @@ client.once('ready', async () => {
 });
 
 // =====================================================================
-// BAN, UNBAN, KICK VE GÖRSEL LOG SİSTEMLERİ
+// BAN, UNBAN VE KICK LOG SİSTEMLERİ (Gereksiz mesaj silinme logları KALDIRILDI)
 // =====================================================================
 client.on('guildBanAdd', async ban => {
-    const log = ban.guild.channels.cache.get("1537983368375828610"); 
+    const log = ban.guild.channels.cache.get("1537983368375828610"); // BAN LOG KANALI
     if (!log) return;
     let yetkili = "Bilinmiyor", sebep = ban.reason || "Belirtilmedi";
     try {
@@ -140,7 +140,7 @@ client.on('guildBanAdd', async ban => {
 });
 
 client.on('guildBanRemove', async ban => {
-    const log = ban.guild.channels.cache.get("1537983387200127006"); 
+    const log = ban.guild.channels.cache.get("1537983387200127006"); // UNBAN LOG KANALI
     if (!log) return;
     let yetkili = "Bilinmiyor";
     try {
@@ -153,60 +153,6 @@ client.on('guildBanRemove', async ban => {
         .setColor('#2b2d31')
         .setDescription(`<a:emoji109:1537925984882266212> **Kullanıcı:** ${ban.user.tag}\n<a:emoji110:1537925433763299418> **Yetkili:** ${yetkili}`)
         .setTimestamp();
-    log.send({ embeds: [embed] }).catch(()=>{});
-});
-
-client.on('messageDelete', async message => {
-    if (message.author?.bot) return;
-    const log = message.guild?.channels.cache.get("1537942394488619170"); 
-    if (!log) return;
-
-    const embed = new EmbedBuilder()
-        .setTitle('<a:emoji58:1537925046486433802> Void | GM Mesaj Log Raporu <a:emoji24:1537925080447717447>')
-        .setColor('#2b2d31')
-        .setThumbnail(message.author.displayAvatarURL({ dynamic: true }))
-        .setTimestamp();
-
-    let desc = `<a:emoji109:1537925984882266212> **Kullanıcı Bilgileri:**\n` +
-               `• İsim: \`${message.author.username}\`\n` +
-               `• ID: \`${message.author.id}\`\n\n` +
-               `<a:emoji110:1537925433763299418> **Hedef Konum:**\n` +
-               `• Sunucu: \`${message.guild.name}\` ( \`${message.guild.id}\` )\n` +
-               `• Kanal: ${message.channel} ( \`${message.channel.id}\` )\n\n`;
-
-    if (message.attachments.size > 0) {
-        const attachment = message.attachments.first();
-        desc += `<a:emoji24:1537925080447717447> **Gönderilen Dosya Adı:**\n\`${attachment.name}\``;
-        embed.setImage(attachment.proxyURL || attachment.url);
-    } else {
-        desc += `<a:emoji24:1537925080447717447> **Silinen Metin:**\n\`\`\`text\n${message.content || 'Bilinmeyen İçerik'}\n\`\`\``;
-    }
-
-    embed.setDescription(desc);
-    log.send({ embeds: [embed] }).catch(()=>{});
-});
-
-client.on('messageUpdate', async (oldM, newM) => {
-    if (oldM.author?.bot || oldM.content === newM.content) return;
-    const log = oldM.guild?.channels.cache.get("1537942394488619170"); 
-    if (!log) return;
-
-    const embed = new EmbedBuilder()
-        .setTitle('<a:emoji58:1537925046486433802> Void | GM Mesaj Düzenleme Raporu <a:emoji24:1537925080447717447>')
-        .setColor('#2b2d31')
-        .setThumbnail(oldM.author.displayAvatarURL({ dynamic: true }))
-        .setTimestamp();
-
-    let desc = `<a:emoji109:1537925984882266212> **Kullanıcı Bilgileri:**\n` +
-               `• İsim: \`${oldM.author.username}\`\n` +
-               `• ID: \`${oldM.author.id}\`\n\n` +
-               `<a:emoji110:1537925433763299418> **Hedef Konum:**\n` +
-               `• Sunucu: \`${oldM.guild.name}\` ( \`${oldM.guild.id}\` )\n` +
-               `• Kanal: ${oldM.channel} ( \`${oldM.channel.id}\` )\n\n` +
-               `<a:emoji24:1537925080447717447> **Eski Metin:**\n\`\`\`text\n${oldM.content || 'Yok'}\n\`\`\`\n` +
-               `<a:emoji24:1537925080447717447> **Yeni Metin:**\n\`\`\`text\n${newM.content || 'Yok'}\n\`\`\``;
-
-    embed.setDescription(desc);
     log.send({ embeds: [embed] }).catch(()=>{});
 });
 // =====================================================================
