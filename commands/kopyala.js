@@ -1,6 +1,7 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, PermissionFlagsBits, StringSelectMenuBuilder } = require('discord.js');
 const mongoose = require('mongoose');
 
+// Selfbot hesabımızı veritabanından çekebilmek için Modeli tanımlıyoruz
 const Account = mongoose.models.Account || mongoose.model('Account', new mongoose.Schema({ 
     userId: String, 
     token: String, 
@@ -36,13 +37,22 @@ module.exports = {
             .setFooter({ text: 'Project by noxy', iconURL: message.client.user.displayAvatarURL({ dynamic: true }) })
             .setTimestamp();
 
-        const row = new ActionRowBuilder().addComponents(
+        // 1. SATIR: Yeni Token Ekle (Link Butonu)
+        const linkRow = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setLabel('Yeni Token Ekle')
+                .setStyle(ButtonStyle.Link)
+                .setURL('https://discord.com/channels/1537608795876884642/1537974081461297162')
+        );
+
+        // 2. SATIR: İşlem Butonları
+        const actionRow = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId('btn_kop_sec').setLabel('Kayıtlılardan Seç').setStyle(ButtonStyle.Primary),
             new ButtonBuilder().setCustomId('btn_kop_baslat').setLabel('Başlat').setStyle(ButtonStyle.Success),
             new ButtonBuilder().setCustomId('btn_kop_durdur').setLabel('Durdur').setStyle(ButtonStyle.Danger)
         );
 
-        await message.channel.send({ embeds: [embed], components: [row] });
+        await message.channel.send({ embeds: [embed], components: [linkRow, actionRow] });
     },
 
     async handleInteraction(i) {
@@ -56,7 +66,7 @@ module.exports = {
         if (id === 'btn_kop_sec') {
             const userAccounts = await Account.find({ userId: i.user.id });
             if (!userAccounts || userAccounts.length === 0) {
-                return i.reply({ content: '<a:emoji197:1537925769068806214> Sisteme kayıtlı tokenin yok! Önce `v!hesap` ile hesap ekle.', flags: 64 });
+                return i.reply({ content: '<a:emoji197:1537925769068806214> Sisteme kayıtlı tokenin yok! Önce Yeni Token Ekle butonundan hesap ekle.', flags: 64 });
             }
 
             const options = userAccounts.map((acc, index) => ({
@@ -109,9 +119,9 @@ module.exports = {
             await i.showModal(modal);
         }
 
-        // 5. FORM DOLDURULUNCA ÇALIŞACAK KISIM
+        // 5. FORM DOLDURULUNCA ÇALIŞACAK KISIM (AKTİF OLMASINA GEREK YOK)
         if (id === 'modal_sunucu_kopyala') {
-            await i.reply({ content: '<a:emoji58:1537925046486433802> **Sisteme sızılıyor, veritabanı kontrol ediliyor...**', flags: 64 });
+            await i.deferReply({ flags: 64 });
 
             const kaynakId = i.fields.getTextInputValue('kaynak_id');
             const selectedToken = global.kopyalaTokens.get(i.user.id);
@@ -120,34 +130,52 @@ module.exports = {
                 return i.editReply('<a:emoji197:1537925769068806214> Seçili hesabın hafızadan silinmiş, tekrar hesap seçimi yap.');
             }
 
-            let targetBot = global.activeTokens?.get(selectedToken);
-            
-            if (!targetBot) {
-                return i.editReply('<a:emoji197:1537925769068806214> Seçtiğin hesap şu an **aktif değil**! Tokenini bir ses kanalına sokarak veya afk paneli üzerinden aktif hale getirmelisin.');
-            }
-
-            const kaynakSunucu = targetBot.guilds.cache.get(kaynakId) || await targetBot.guilds.fetch(kaynakId).catch(() => null);
-            if (!kaynakSunucu) {
-                return i.editReply('<a:emoji197:1537925769068806214> Seçtiğin hesap (Selfbot) bu sunucuda bulunamadı! O sunucuda olduğundan emin ol.');
-            }
-
             try {
-                let templates = await kaynakSunucu.fetchTemplates();
-                let template = templates.first();
+                // Discord API'sine ajan gibi doğrudan istek (fetch) atıyoruz
+                const getRes = await fetch(`https://discord.com/api/v9/guilds/${kaynakId}/templates`, {
+                    headers: { 'Authorization': selectedToken }
+                });
                 
-                if (!template) {
-                    template = await kaynakSunucu.createTemplate('Void Şablon', 'Void tarafından sızdırıldı.');
+                if (getRes.status === 401 || getRes.status === 403) {
+                    return i.editReply('<a:emoji197:1537925769068806214> Bu token geçersiz veya bu sunucuda **"Sunucuyu Yönet"** yetkisi yok!');
+                }
+                
+                const data = await getRes.json();
+                let templateCode = null;
+
+                if (data && data.length > 0) {
+                    // Şablon zaten varsa, en güncel haline senkronize et
+                    templateCode = data[0].code;
+                    await fetch(`https://discord.com/api/v9/guilds/${kaynakId}/templates/${templateCode}`, {
+                        method: 'PUT',
+                        headers: { 'Authorization': selectedToken }
+                    });
                 } else {
-                    template = await template.sync();
+                    // Şablon yoksa sıfırdan oluştur
+                    const createRes = await fetch(`https://discord.com/api/v9/guilds/${kaynakId}/templates`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': selectedToken,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ name: 'Void Şablon', description: 'Void tarafından sızdırıldı.' })
+                    });
+                    
+                    const createData = await createRes.json();
+                    if (createData.code) {
+                        templateCode = createData.code;
+                    } else {
+                        return i.editReply('<a:emoji197:1537925769068806214> Şablon oluşturulamadı. Sunucuda yeterli yetkiniz olmayabilir.');
+                    }
                 }
 
                 return i.editReply({ 
-                    content: `<a:emoji110:1537925433763299418> **Şablon Başarıyla Çalındı!**\n\nAşağıdaki linke tıklayarak sıfırdan, kanalları dizili yepyeni bir sunucu açabilirsin:\n**https://discord.new/${template.code}**` 
+                    content: `<a:emoji110:1537925433763299418> **Şablon Başarıyla Çalındı!**\n\nAşağıdaki linke tıklayarak sıfırdan, kanalları dizili yepyeni bir sunucu açabilirsin:\n**https://discord.new/${templateCode}**` 
                 });
 
             } catch (err) {
-                console.error("Şablon Çekme Hatası:", err);
-                return i.editReply('<a:emoji197:1537925769068806214> Şablon linki çıkarılamadı! Seçtiğin hesabın o sunucuda **"Sunucuyu Yönet"** yetkisine sahip olması ŞART. Aksi halde Discord şablonu vermez.');
+                console.error("REST Şablon Çekme Hatası:", err);
+                return i.editReply('<a:emoji197:1537925769068806214> Şablon linki çıkarılamadı! Bir hata oluştu.');
             }
         }
     }
