@@ -36,7 +36,7 @@ module.exports = {
                 '<a:emoji109:1537925984882266212> **Sistem Nasıl Çalışır?**\n' +
                 'Belirlediğiniz kurbanın ID\'sini girersiniz. Sistem, seçtiğiniz tokenin profilini saniyeler içinde kurbanın **Görünen Adı, Profil Fotoğrafı, Afişi (Banner) ve Hakkında (Bio)** kısmıyla birebir aynı yapar!\n\n' +
                 '<a:uyari:1538527482007789648> **ÖNEMLİ BİLGİLER:**\n' +
-                '**1.** Kurbanın profilinde **hareketli (GIF) PP veya Banner** varsa, bunları kopyalayabilmek için işlem yapılan tokende **Nitro** olması gerekmektedir.\n' +
+                '**1.** Eğer kopyalanan hesapta afiş (banner) veya GIF avatar varsa ve kopyalayan hesapta **Nitro yoksa**, sistem akıllı moda geçer. Nitro gerektiren kısımları es geçip **İsim, Bio ve normal Avatarı** kopyalar.\n' +
                 '**2.** Discord API kısıtlamaları gereği orijinal `@username` değiştirilmez, bunun yerine birebir aynı yapılabilen **Görünen Ad (Display Name)** kopyalanır.\n\n' +
                 '<a:emoji24:1537925080447717447> *Klonlamayı başlatmak için paneli kullanın.*'
             )
@@ -141,6 +141,7 @@ module.exports = {
             await i.deferReply({ flags: 64 }).catch(() => {});
 
             try {
+                // 1. Kurban verilerini çek
                 const profileRes = await fetch(`https://discord.com/api/v9/users/${targetId}/profile?with_mutual_guilds=false`, {
                     headers: { 'Authorization': selectedToken, 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
                 });
@@ -154,11 +155,13 @@ module.exports = {
                 const bio = user.bio || "";
                 const globalName = user.global_name || user.username;
 
-                await i.editReply('<a:emoji58:1537925046486433802> Kurbanın verileri çekildi. Resimler dönüştürülüyor ve profile uygulanıyor...');
+                await i.editReply('<a:emoji58:1537925046486433802> Kurbanın verileri çekildi. Klonlama uygulanıyor...');
 
                 let avatarBase64 = null;
+                let isAnimatedAvatar = false;
                 if (user.avatar) {
-                    const ext = user.avatar.startsWith('a_') ? 'gif' : 'png';
+                    isAnimatedAvatar = user.avatar.startsWith('a_');
+                    const ext = isAnimatedAvatar ? 'gif' : 'png';
                     avatarBase64 = await getBase64Image(`https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${ext}?size=1024`);
                 }
 
@@ -168,29 +171,62 @@ module.exports = {
                     bannerBase64 = await getBase64Image(`https://cdn.discordapp.com/banners/${user.id}/${user.banner}.${ext}?size=1024`);
                 }
 
-                const updateRes = await fetch('https://discord.com/api/v9/users/@me', {
+                let payload = {
+                    global_name: globalName,
+                    bio: bio,
+                    avatar: avatarBase64,
+                    banner: bannerBase64
+                };
+
+                // 2. Full paketi Discord'a gönder
+                let updateRes = await fetch('https://discord.com/api/v9/users/@me', {
                     method: 'PATCH',
                     headers: { 
                         'Authorization': selectedToken, 
                         'Content-Type': 'application/json',
                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
                     },
-                    body: JSON.stringify({
-                        global_name: globalName,
-                        bio: bio,
-                        avatar: avatarBase64,
-                        banner: bannerBase64
-                    })
+                    body: JSON.stringify(payload)
                 });
 
+                // 3. EĞER NİTRO HATASI VERİRSE (Akıllı Kurtarma Modu)
                 if (!updateRes.ok) {
                     const errData = await updateRes.json();
-                    if (errData.avatar || errData.banner) {
-                        return i.editReply('<a:uyari:1538527482007789648> **Klonlama Başarısız!**\nKurbanın hareketli (GIF) avatarı veya bannerı var, bunu kopyalamak için bu hesabında **Discord Nitro** olması gerekiyor.');
+                    const errString = JSON.stringify(errData);
+
+                    if (errString.includes('PREMIUM_ONLY')) {
+                        // Afiş (Banner) her halükarda Nitro ister, onu çöpe at.
+                        payload.banner = null; 
+
+                        // Eğer profil fotoğrafı GIF ise onu PNG'ye (hareketsiz) çevirip öyle çalmayı dene.
+                        if (isAnimatedAvatar) {
+                            payload.avatar = await getBase64Image(`https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=1024`);
+                        }
+
+                        // Kurtarma (Fallback) Paketi ile tekrar saldır
+                        updateRes = await fetch('https://discord.com/api/v9/users/@me', {
+                            method: 'PATCH',
+                            headers: { 
+                                'Authorization': selectedToken, 
+                                'Content-Type': 'application/json',
+                                'User-Agent': 'Mozilla/5.0'
+                            },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (updateRes.ok) {
+                            return i.editReply(`<a:emoji110:1537925433763299418> **Operasyon Kısmen Başarılı!**\n\nBu hesapta Nitro olmadığı için kurbanın afişi (banner) kopyalanamadı. Ancak **İsim, Bio ve Profil Fotoğrafı** başarıyla çalındı!`);
+                        } else {
+                            const finalErr = await updateRes.json();
+                            return i.editReply(`<a:uyari:1538527482007789648> Nitro ayarları atlanmasına rağmen hata oldu: ${JSON.stringify(finalErr)}`);
+                        }
                     }
-                    return i.editReply(`<a:uyari:1538527482007789648> Profil güncellenirken hata oluştu! Hata: ${JSON.stringify(errData)}`);
+
+                    // Nitro harici başka bir hataysa direkt ekrana bas
+                    return i.editReply(`<a:uyari:1538527482007789648> Profil güncellenirken hata oluştu! Hata: ${errString}`);
                 }
 
+                // İlk denemede her şey kusursuz çalıştıysa
                 return i.editReply(`<a:emoji110:1537925433763299418> **Operasyon Başarılı!**\n\nHesap kusursuz bir şekilde kurbanın (**${globalName}**) ikizine dönüştürüldü. Kurbanın tüm Görünen Adı, Profil Resmi, Afişi ve Biyografisi başarıyla çalındı!`);
 
             } catch (err) {
