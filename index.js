@@ -254,7 +254,13 @@ client.on('interactionCreate', async interaction => {
     if (interaction.isButton() || interaction.isModalSubmit() || interaction.isStringSelectMenu()) {
         const id = interaction.customId;
 
-        // KOPYALAMA BUTONLARI BURAYA EKLENDİ
+        // ARKADAŞ TEMİZLEYİCİ SİSTEMİ BUTON VE FORM YÖNLENDİRMESİ
+        if (['btn_ark_sec', 'select_ark_token', 'btn_ark_whitelist', 'modal_ark_whitelist', 'btn_ark_baslat', 'btn_ark_durdur'].includes(id)) {
+            const cmd = client.textCommands.get('arkadas');
+            if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
+        }
+
+        // KOPYALAMA BUTONLARI
         if (['btn_kop_sec', 'select_kop_token', 'btn_kop_baslat', 'btn_kop_durdur', 'modal_sunucu_kopyala'].includes(id)) {
             const cmd = client.textCommands.get('kopyala');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
