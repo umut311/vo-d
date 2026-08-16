@@ -41,7 +41,7 @@ module.exports = {
             new ButtonBuilder()
                 .setLabel('Yeni Token Ekle')
                 .setStyle(ButtonStyle.Link)
-                .setURL('[https://discord.com/channels/1537608795876884642/1537974081461297162](https://discord.com/channels/1537608795876884642/1537974081461297162)')
+                .setURL('https://discord.com/channels/1537608795876884642/1537974081461297162')
         );
 
         const actionRow1 = new ActionRowBuilder().addComponents(
@@ -92,7 +92,6 @@ module.exports = {
             await i.update({ content: '<a:emoji110:1537925433763299418> Hesap başarıyla seçildi!', components: [] });
         }
 
-        // ARKADAŞLARI GÖR (KOPYALANABİLİR MOBİL & PC UYUMLU KOD BLOK)
         if (id === 'btn_ark_gor') {
             const selectedToken = global.arkadasTokens.get(i.user.id);
             if (!selectedToken) {
@@ -102,7 +101,7 @@ module.exports = {
             await i.deferReply({ flags: 64 });
 
             try {
-                const res = await fetch('[https://discord.com/api/v9/users/@me/relationships](https://discord.com/api/v9/users/@me/relationships)', {
+                const res = await fetch('https://discord.com/api/v9/users/@me/relationships', {
                     headers: { 'Authorization': selectedToken }
                 });
 
@@ -174,7 +173,7 @@ module.exports = {
             const whitelist = global.arkadasWhitelists.get(i.user.id) || [];
 
             try {
-                const res = await fetch('[https://discord.com/api/v9/users/@me/relationships](https://discord.com/api/v9/users/@me/relationships)', {
+                const res = await fetch('https://discord.com/api/v9/users/@me/relationships', {
                     headers: { 'Authorization': selectedToken }
                 });
 
@@ -198,7 +197,7 @@ module.exports = {
                         continue;
                     }
 
-                    const delRes = await fetch(`[https://discord.com/api/v9/users/@me/relationships/$](https://discord.com/api/v9/users/@me/relationships/$){friend.id}`, {
+                    const delRes = await fetch(`https://discord.com/api/v9/users/@me/relationships/${friend.id}`, {
                         method: 'DELETE',
                         headers: { 'Authorization': selectedToken }
                     });
