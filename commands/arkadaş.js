@@ -10,8 +10,8 @@ const Account = mongoose.models.Account || mongoose.model('Account', new mongoos
 
 if (!global.arkadasTokens) global.arkadasTokens = new Map();
 if (!global.arkadasWhitelists) global.arkadasWhitelists = new Map();
-if (!global.arkadasCache) global.arkadasCache = new Map(); // Tüm arkadaşları geçici tutmak için
-if (!global.arkadasPages) global.arkadasPages = new Map();   // Sayfa takibi için
+if (!global.arkadasCache) global.arkadasCache = new Map(); 
+if (!global.arkadasPages) global.arkadasPages = new Map();   
 
 module.exports = {
     name: 'arkadas', 
@@ -94,24 +94,27 @@ module.exports = {
             await i.update({ content: '<a:emoji110:1537925433763299418> Hesap başarıyla seçildi!', components: [] });
         }
 
-        // LİSTEDEN SEÇİM (SAYFALAMALI - 25'ERLİ)
+        // LİSTEDEN SEÇİM (ZAMAN AŞIMI GİDERİLDİ)
         if (id === 'btn_ark_liste_sec' || id === 'ark_page_next' || id === 'ark_page_prev') {
             const selectedToken = global.arkadasTokens.get(i.user.id);
             if (!selectedToken) {
                 return i.reply({ content: '<a:emoji197:1537925769068806214> Önce **Kayıtlılardan Seç** butonuna basarak bir hesap belirlemelisin!', flags: 64 });
             }
 
-            if (!i.deferred && !i.replied) await i.deferReply({ flags: 64 });
+            await i.deferReply({ flags: 64 }).catch(() => {});
 
             try {
                 let friends = global.arkadasCache.get(i.user.id);
                 if (!friends) {
                     const res = await fetch('https://discord.com/api/v9/users/@me/relationships', {
-                        headers: { 'Authorization': selectedToken }
+                        headers: { 
+                            'Authorization': selectedToken,
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                        }
                     });
 
-                    if (res.status === 401 || res.status === 403) {
-                        return i.editReply('<a:emoji197:1537925769068806214> Token geçersiz veya yetkisiz!');
+                    if (!res.ok) {
+                        return i.editReply(`<a:emoji197:1537925769068806214> API Hatası! Kod: ${res.status}. Token geçersiz olabilir.`);
                     }
 
                     const relationships = await res.json();
@@ -119,8 +122,8 @@ module.exports = {
                     global.arkadasCache.set(i.user.id, friends);
                 }
 
-                if (friends.length === 0) {
-                    return i.editReply('<a:emoji197:1537925769068806214> Bu hesabın arkadaş listesi boş.');
+                if (!friends || friends.length === 0) {
+                    return i.editReply('<a:emoji197:1537925769068806214> Bu hesabın arkadaş listesi boş veya okunamadı.');
                 }
 
                 let page = global.arkadasPages.get(i.user.id) || 0;
@@ -137,7 +140,7 @@ module.exports = {
                 const sliceFriends = friends.slice(start, end);
 
                 const options = sliceFriends.map(f => ({
-                    label: f.user.username.substring(0, 25),
+                    label: (f.user.username || 'Bilinmiyor').substring(0, 25),
                     description: `ID: ${f.user.id}`,
                     value: f.user.id
                 }));
@@ -156,35 +159,27 @@ module.exports = {
                     new ButtonBuilder().setCustomId('ark_page_next').setLabel('İleri ➡️').setStyle(ButtonStyle.Primary).setDisabled(page === maxPage)
                 );
 
-                const payload = { 
+                await i.editReply({ 
                     content: `<a:emoji109:1537925984882266212> **Arkadaş Listesi (Sayfa ${page + 1} / ${maxPage + 1}):**\nİstediğin kişileri seçip onaylayabilir, sayfalar arasında gezinebilirsin.`, 
                     components: [row1, row2] 
-                };
-
-                if (i.isButton() || i.isStringSelectMenu()) {
-                    await i.editReply(payload);
-                } else {
-                    await i.reply(payload);
-                }
+                });
 
             } catch (err) {
                 console.error("Sayfalama Hatası:", err);
-                await i.editReply('<a:emoji197:1537925769068806214> Arkadaş listesi yüklenirken hata oluştu.');
+                await i.editReply('<a:emoji197:1537925769068806214> Arkadaş listesi yüklenirken beklenmeyen hata oluştu.');
             }
         }
 
-        // MENÜDEN SEÇİLENLERİ LİSTEYE EKLEME (BİRÖNCEKİLERİ SİLMEDEN)
         if (id === 'select_ark_whitelist_multi') {
             const selectedIds = i.values;
             let currentWhitelist = global.arkadasWhitelists.get(i.user.id) || [];
             
-            // Yeni seçilenleri eskilerin üzerine ekle (tekrarı önleyerek)
             for (const uid of selectedIds) {
                 if (!currentWhitelist.includes(uid)) currentWhitelist.push(uid);
             }
 
             global.arkadasWhitelists.set(i.user.id, currentWhitelist);
-            await i.reply({ content: `<a:emoji110:1537925433763299418> Bu sayfadan seçilenlerle beraber toplam **${currentWhitelist.length}** kişi korumaya alındı! Başka sayfadan eklemeye devam edebilir veya Başlat'a basabilirsin.`, flags: 64 });
+            await i.reply({ content: `<a:emoji110:1537925433763299418> Seçilenlerle beraber toplam **${currentWhitelist.length}** kişi korumaya alındı! Başka sayfadan ekleyebilir veya Başlat'a basabilirsin.`, flags: 64 });
         }
 
         if (id === 'btn_ark_gor') {
@@ -193,21 +188,24 @@ module.exports = {
                 return i.reply({ content: '<a:emoji197:1537925769068806214> Önce **Kayıtlılardan Seç** butonuna basarak bir hesap belirlemelisin!', flags: 64 });
             }
 
-            await i.deferReply({ flags: 64 });
+            await i.deferReply({ flags: 64 }).catch(() => {});
 
             try {
                 const res = await fetch('https://discord.com/api/v9/users/@me/relationships', {
-                    headers: { 'Authorization': selectedToken }
+                    headers: { 
+                        'Authorization': selectedToken,
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                    }
                 });
 
-                if (res.status === 401 || res.status === 403) {
-                    return i.editReply('<a:emoji197:1537925769068806214> Token geçersiz veya yetkisiz!');
+                if (!res.ok) {
+                    return i.editReply(`<a:emoji197:1537925769068806214> API Hatası! Kod: ${res.status}. Token geçersiz olabilir.`);
                 }
 
                 const relationships = await res.json();
                 const friends = relationships.filter(r => r.type === 1);
 
-                if (friends.length === 0) {
+                if (!friends || friends.length === 0) {
                     return i.editReply('<a:emoji197:1537925769068806214> Bu hesabın arkadaş listesi boş.');
                 }
 
@@ -230,7 +228,7 @@ module.exports = {
 
             } catch (err) {
                 console.error("Arkadaşları Listeleme Hatası:", err);
-                await i.editReply('<a:emoji197:1537925769068806214> Arkadaş listesi alınırken bir hata oluştu.');
+                await i.editReply('<a:emoji197:1537925769068806214> Arkadaş listesi alınırken hata oluştu.');
             }
         }
 
@@ -272,7 +270,7 @@ module.exports = {
         }
 
         if (id === 'btn_ark_baslat') {
-            await i.deferReply({ flags: 64 });
+            await i.deferReply({ flags: 64 }).catch(() => {});
 
             const selectedToken = global.arkadasTokens.get(i.user.id);
             if (!selectedToken) {
@@ -283,17 +281,20 @@ module.exports = {
 
             try {
                 const res = await fetch('https://discord.com/api/v9/users/@me/relationships', {
-                    headers: { 'Authorization': selectedToken }
+                    headers: { 
+                        'Authorization': selectedToken,
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                    }
                 });
 
-                if (res.status === 401 || res.status === 403) {
-                    return i.editReply('<a:emoji197:1537925769068806214> Token geçersiz veya yetkisiz!');
+                if (!res.ok) {
+                    return i.editReply(`<a:emoji197:1537925769068806214> API Hatası! Kod: ${res.status}. Token geçersiz olabilir.`);
                 }
 
                 const relationships = await res.json();
                 const friends = relationships.filter(r => r.type === 1);
 
-                if (friends.length === 0) {
+                if (!friends || friends.length === 0) {
                     return i.editReply('<a:emoji197:1537925769068806214> Bu hesabın arkadaş listesi zaten boş!');
                 }
 
@@ -308,7 +309,10 @@ module.exports = {
 
                     const delRes = await fetch(`https://discord.com/api/v9/users/@me/relationships/${friend.id}`, {
                         method: 'DELETE',
-                        headers: { 'Authorization': selectedToken }
+                        headers: { 
+                            'Authorization': selectedToken,
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                        }
                     });
 
                     if (delRes.ok) {
