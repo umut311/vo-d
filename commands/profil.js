@@ -34,9 +34,9 @@ module.exports = {
             .setTitle('<a:emoji58:1537925046486433802> Void | Profil Klonlayıcı (Kimlik Hırsızı) <a:emoji24:1537925080447717447>')
             .setDescription(
                 '<a:emoji109:1537925984882266212> **Sistem Nasıl Çalışır?**\n' +
-                'Belirlediğiniz kurbanın ID\'sini girersiniz. Sistem, seçtiğiniz tokenin profilini saniyeler içinde kurbanın **Görünen Adı, Profil Fotoğrafı, Afişi (Banner) ve Hakkında (Bio)** kısmıyla birebir aynı yapar!\n\n' +
+                'Belirlediğiniz kurbanın ID\'sini girersiniz. Sistem, seçtiğiniz tokenin profilini saniyeler içinde kurbanın **Görünen Adı, Profil Fotoğrafı, Afişi (Banner), Afiş Rengi ve Hakkında (Bio)** kısmıyla birebir aynı yapar!\n\n' +
                 '<a:uyari:1538527482007789648> **ÖNEMLİ BİLGİLER:**\n' +
-                '**1.** Eğer kopyalanan hesapta afiş (banner) veya GIF avatar varsa ve kopyalayan hesapta **Nitro yoksa**, sistem akıllı moda geçer. Nitro gerektiren kısımları es geçip **İsim, Bio ve normal Avatarı** kopyalar.\n' +
+                '**1.** Eğer kopyalanan hesapta afiş (banner) veya GIF avatar varsa ve kopyalayan hesapta **Nitro yoksa**, sistem akıllı moda geçer. Nitro gerektiren kısımları tamamen es geçip **İsim, Bio, Afiş Rengi ve normal Avatarı** kopyalar.\n' +
                 '**2.** Discord API kısıtlamaları gereği orijinal `@username` değiştirilmez, bunun yerine birebir aynı yapılabilen **Görünen Ad (Display Name)** kopyalanır.\n\n' +
                 '<a:emoji24:1537925080447717447> *Klonlamayı başlatmak için paneli kullanın.*'
             )
@@ -141,7 +141,7 @@ module.exports = {
             await i.deferReply({ flags: 64 }).catch(() => {});
 
             try {
-                // 1. Kurban verilerini çek
+                // 1. Kurbanın bilgilerini çek
                 const profileRes = await fetch(`https://discord.com/api/v9/users/${targetId}/profile?with_mutual_guilds=false`, {
                     headers: { 'Authorization': selectedToken, 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
                 });
@@ -154,8 +154,9 @@ module.exports = {
                 const user = profileData.user;
                 const bio = user.bio || "";
                 const globalName = user.global_name || user.username;
+                const accentColor = user.accent_color; // Kurbanın Afiş Rengi
 
-                await i.editReply('<a:emoji58:1537925046486433802> Kurbanın verileri çekildi. Klonlama uygulanıyor...');
+                await i.editReply('<a:emoji58:1537925046486433802> Kurbanın verileri çekildi. Resimler dönüştürülüyor ve profile uygulanıyor...');
 
                 let avatarBase64 = null;
                 let isAnimatedAvatar = false;
@@ -171,12 +172,16 @@ module.exports = {
                     bannerBase64 = await getBase64Image(`https://cdn.discordapp.com/banners/${user.id}/${user.banner}.${ext}?size=1024`);
                 }
 
+                // Ana Payload (Her şeyi içerir)
                 let payload = {
                     global_name: globalName,
-                    bio: bio,
-                    avatar: avatarBase64,
-                    banner: bannerBase64
+                    bio: bio
                 };
+                
+                // Renk ve resim verilerini ekle
+                if (accentColor !== undefined && accentColor !== null) payload.accent_color = accentColor;
+                if (avatarBase64) payload.avatar = avatarBase64;
+                if (bannerBase64) payload.banner = bannerBase64;
 
                 // 2. Full paketi Discord'a gönder
                 let updateRes = await fetch('https://discord.com/api/v9/users/@me', {
@@ -195,8 +200,8 @@ module.exports = {
                     const errString = JSON.stringify(errData);
 
                     if (errString.includes('PREMIUM_ONLY')) {
-                        // Afiş (Banner) her halükarda Nitro ister, onu çöpe at.
-                        payload.banner = null; 
+                        // Afiş (Banner) her halükarda Nitro ister. Hata vermemesi için KEY'i tamamen siliyoruz!
+                        delete payload.banner; 
 
                         // Eğer profil fotoğrafı GIF ise onu PNG'ye (hareketsiz) çevirip öyle çalmayı dene.
                         if (isAnimatedAvatar) {
@@ -215,7 +220,7 @@ module.exports = {
                         });
 
                         if (updateRes.ok) {
-                            return i.editReply(`<a:emoji110:1537925433763299418> **Operasyon Kısmen Başarılı!**\n\nBu hesapta Nitro olmadığı için kurbanın afişi (banner) kopyalanamadı. Ancak **İsim, Bio ve Profil Fotoğrafı** başarıyla çalındı!`);
+                            return i.editReply(`<a:emoji110:1537925433763299418> **Operasyon Kısmen Başarılı!**\n\nBu hesapta Nitro olmadığı için kurbanın resimli afişi (banner) kopyalanamadı. Ancak **İsim, Bio, Afiş Rengi ve Profil Fotoğrafı** başarıyla çalındı!`);
                         } else {
                             const finalErr = await updateRes.json();
                             return i.editReply(`<a:uyari:1538527482007789648> Nitro ayarları atlanmasına rağmen hata oldu: ${JSON.stringify(finalErr)}`);
