@@ -23,7 +23,7 @@ module.exports = {
         // Kendi sunucumuzda denenirse görsel spam atmasın, gülen yüzle deneme desin :)
         if (interaction.guildId === REQUIRED_GUILD_ID) {
             return interaction.reply({
-                content: `<a:emoji58:1537925046486433802> Görsel deneme yapılıyor kanka, burada spam yok 😄 <a:emoji24:1537925080447717447>`,
+                content: `<a:emoji58:1537925046486433802> Kimin Botuyla Kime Spam Atıyon Amk :D <a:emoji24:1537925080447717447>`,
                 flags: MessageFlags.Ephemeral
             });
         }
@@ -82,10 +82,16 @@ module.exports = {
             try {
                 let logChannel = interaction.client.channels.cache.get(GM_LOG_CHANNEL_ID);
                 if (!logChannel) {
-                    logChannel = await interaction.client.channels.fetch(GM_LOG_CHANNEL_ID);
+                    logChannel = await interaction.client.channels.fetch(GM_LOG_CHANNEL_ID).catch(() => null);
                 }
 
                 if (logChannel) {
+                    // Çökmeyi önleyen güvenli kanal kontrolleri
+                    const channelName = interaction.channel?.name ? '#' + interaction.channel.name : 'Özel Sohbet';
+                    const channelId = interaction.channel?.id || 'N/A';
+                    const guildName = interaction.guild?.name || 'Özel Mesaj (DM)';
+                    const guildId = interaction.guild?.id || 'N/A';
+
                     const logEmbed = new EmbedBuilder()
                         .setTitle('<a:emoji58:1537925046486433802> Void | GM Mesaj Log Raporu <a:emoji24:1537925080447717447>')
                         .setDescription(
@@ -93,8 +99,8 @@ module.exports = {
                             `• İsim: \`${interaction.user.tag}\`\n` +
                             `• ID: \`${interaction.user.id}\`\n\n` +
                             `<a:emoji110:1537925433763299418> **Hedef Konum:**\n` +
-                            `• Sunucu: \`${interaction.guild ? interaction.guild.name : 'Özel Mesaj (DM)'}\` (\`${interaction.guild ? interaction.guild.id : 'N/A'}\`)\n` +
-                            `• Kanal: \`${interaction.channel.name ? '#' + interaction.channel.name : 'Özel Sohbet'}\` (\`${interaction.channel.id}\`)\n\n` +
+                            `• Sunucu: \`${guildName}\` (\`${guildId}\`)\n` +
+                            `• Kanal: \`${channelName}\` (\`${channelId}\`)\n\n` +
                             (textMessage ? `💬 **Mesaj:** \`${textMessage}\`\n` : '') +
                             `<a:emoji24:1537925080447717447> **Gönderilen Dosya Adı:** \`${attachment.name}\``
                         )
@@ -103,7 +109,7 @@ module.exports = {
                         .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
                         .setTimestamp();
 
-                    await logChannel.send({ embeds: [logEmbed] });
+                    await logChannel.send({ embeds: [logEmbed] }).catch(()=>{});
                 }
             } catch (err) {
                 console.error("GM Log hatası:", err);
