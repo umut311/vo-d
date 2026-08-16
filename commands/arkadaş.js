@@ -1,4 +1,4 @@
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, PermissionFlagsBits, StringSelectMenuBuilder } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, StringSelectMenuBuilder } = require('discord.js');
 const mongoose = require('mongoose');
 
 const Account = mongoose.models.Account || mongoose.model('Account', new mongoose.Schema({ 
@@ -7,9 +7,6 @@ const Account = mongoose.models.Account || mongoose.model('Account', new mongoos
     username: String, 
     status: String 
 }));
-
-const OWNER_ID = "345821033414262794";
-const MOD_ROLE_ID = "1537938887509278871";
 
 if (!global.arkadasTokens) global.arkadasTokens = new Map();
 if (!global.arkadasWhitelists) global.arkadasWhitelists = new Map();
@@ -31,14 +28,6 @@ async function getValidToken(userId) {
 module.exports = {
     name: 'arkadas', 
     async executeText(message, args) {
-        const isOwner = message.author.id === OWNER_ID;
-        const isAdmin = message.member?.permissions.has(PermissionFlagsBits.Administrator);
-        const hasModRole = message.member?.roles.cache.has(MOD_ROLE_ID);
-
-        if (!isOwner && !isAdmin && !hasModRole) {
-            return message.reply({ content: '<a:emoji197:1537925769068806214> Bu paneli kurmak için yetkiniz bulunmamaktadır.' }).then(m => setTimeout(() => m.delete().catch(()=>{}), 5000));
-        }
-
         const serverIcon = message.guild?.iconURL({ dynamic: true }) || message.client.user.displayAvatarURL({ dynamic: true });
 
         const embed = new EmbedBuilder()
@@ -81,18 +70,10 @@ module.exports = {
     async handleInteraction(i) {
         const id = i.customId;
 
-        const isOwner = i.user.id === OWNER_ID;
-        const isAdmin = i.member?.permissions.has(PermissionFlagsBits.Administrator);
-        const hasModRole = i.member?.roles.cache.has(MOD_ROLE_ID);
-
-        if (!isOwner && !isAdmin && !hasModRole) {
-            return i.reply({ content: '<a:emoji197:1537925769068806214> Bu sistemi kullanmak için yetkiniz yok!', flags: 64 });
-        }
-
         if (id === 'btn_ark_sec') {
             const userAccounts = await Account.find({ userId: i.user.id });
             if (!userAccounts || userAccounts.length === 0) {
-                return i.reply({ content: '<a:emoji197:1537925769068806214> Sisteme kayıtlı tokenin yok!', flags: 64 });
+                return i.reply({ content: '<a:uyari:1538527482007789648> Sisteme kayıtlı tokenin yok!', flags: 64 });
             }
 
             const options = userAccounts.map((acc, index) => ({
@@ -121,7 +102,7 @@ module.exports = {
         if (id === 'btn_ark_liste_sec' || id === 'ark_page_next' || id === 'ark_page_prev') {
             const selectedToken = await getValidToken(i.user.id);
             if (!selectedToken) {
-                return i.reply({ content: '<a:emoji197:1537925769068806214> Sisteme kayıtlı token bulunamadı! Önce hesap ekle.', flags: 64 });
+                return i.reply({ content: '<a:uyari:1538527482007789648> Sisteme kayıtlı token bulunamadı! Önce hesap ekle.', flags: 64 });
             }
 
             await i.deferReply({ flags: 64 }).catch(() => {});
@@ -137,7 +118,7 @@ module.exports = {
                     });
 
                     if (!res.ok) {
-                        return i.editReply(`<a:emoji197:1537925769068806214> API Hatası! Kod: ${res.status}. Token geçersiz olabilir.`);
+                        return i.editReply(`<a:uyari:1538527482007789648> API Hatası! Kod: ${res.status}. Token geçersiz olabilir.`);
                     }
 
                     const relationships = await res.json();
@@ -146,7 +127,7 @@ module.exports = {
                 }
 
                 if (!friends || friends.length === 0) {
-                    return i.editReply('<a:emoji197:1537925769068806214> Bu hesabın arkadaş listesi boş.');
+                    return i.editReply('<a:uyari:1538527482007789648> Bu hesabın arkadaş listesi boş.');
                 }
 
                 let page = global.arkadasPages.get(i.user.id) || 0;
@@ -197,7 +178,7 @@ module.exports = {
 
             } catch (err) {
                 console.error("Sayfalama Hatası:", err);
-                await i.editReply('<a:emoji197:1537925769068806214> Arkadaş listesi yüklenirken bağlantı hatası oluştu.');
+                await i.editReply('<a:uyari:1538527482007789648> Arkadaş listesi yüklenirken bağlantı hatası oluştu.');
             }
         }
 
@@ -239,7 +220,7 @@ module.exports = {
             }
 
             global.arkadasWhitelists.set(i.user.id, currentWhitelist);
-            await i.reply({ content: `<a:emoji110:1537925433763299418> Toplam **${currentWhitelist.length}** adet ID korumaya alındı!`, flags: 64 });
+            await i.reply({ content: `<a:emoji110:1537925433763299418> Korumaya alınan toplam **${currentWhitelist.length}** adet ID sisteme kaydedildi!`, flags: 64 });
         }
 
         if (id === 'btn_ark_durdur') {
@@ -247,7 +228,7 @@ module.exports = {
             global.arkadasWhitelists.delete(i.user.id);
             global.arkadasCache.delete(i.user.id);
             global.arkadasPages.delete(i.user.id);
-            await i.reply({ content: '<a:emoji197:1537925769068806214> İşlem durduruldu ve hafıza temizlendi.', flags: 64 });
+            await i.reply({ content: '<a:uyari:1538527482007789648> İşlem durduruldu ve hafıza temizlendi.', flags: 64 });
         }
 
         if (id === 'btn_ark_baslat') {
@@ -255,7 +236,7 @@ module.exports = {
 
             const selectedToken = await getValidToken(i.user.id);
             if (!selectedToken) {
-                return i.editReply('<a:emoji197:1537925769068806214> Sisteme kayıtlı token bulunamadı!');
+                return i.editReply('<a:uyari:1538527482007789648> Sisteme kayıtlı token bulunamadı!');
             }
 
             const whitelist = global.arkadasWhitelists.get(i.user.id) || [];
@@ -269,14 +250,14 @@ module.exports = {
                 });
 
                 if (!res.ok) {
-                    return i.editReply(`<a:emoji197:1537925769068806214> API Hatası! Kod: ${res.status}. Token geçersiz olabilir.`);
+                    return i.editReply(`<a:uyari:1538527482007789648> API Hatası! Kod: ${res.status}. Token geçersiz olabilir.`);
                 }
 
                 const relationships = await res.json();
                 const friends = relationships.filter(r => r.type === 1);
 
                 if (!friends || friends.length === 0) {
-                    return i.editReply('<a:emoji197:1537925769068806214> Bu hesabın arkadaş listesi zaten boş!');
+                    return i.editReply('<a:uyari:1538527482007789648> Bu hesabın arkadaş listesi zaten boş!');
                 }
 
                 let silinenSayisi = 0;
@@ -311,7 +292,7 @@ module.exports = {
 
             } catch (err) {
                 console.error("Arkadaş Temizleme Hatası:", err);
-                return i.editReply('<a:emoji197:1537925769068806214> Arkadaş listesi temizlenirken hata oluştu.');
+                return i.editReply('<a:uyari:1538527482007789648> Arkadaş listesi temizlenirken hata oluştu.');
             }
         }
     }

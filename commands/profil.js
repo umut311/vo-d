@@ -1,4 +1,4 @@
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, PermissionFlagsBits, StringSelectMenuBuilder } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, StringSelectMenuBuilder } = require('discord.js');
 const mongoose = require('mongoose');
 
 const Account = mongoose.models.Account || mongoose.model('Account', new mongoose.Schema({ 
@@ -7,9 +7,6 @@ const Account = mongoose.models.Account || mongoose.model('Account', new mongoos
     username: String, 
     status: String 
 }));
-
-const OWNER_ID = "345821033414262794";
-const MOD_ROLE_ID = "1537938887509278871";
 
 if (!global.profilTokens) global.profilTokens = new Map();
 if (!global.profilTargets) global.profilTargets = new Map();
@@ -31,14 +28,6 @@ async function getBase64Image(url) {
 module.exports = {
     name: 'profil', 
     async executeText(message, args) {
-        const isOwner = message.author.id === OWNER_ID;
-        const isAdmin = message.member?.permissions.has(PermissionFlagsBits.Administrator);
-        const hasModRole = message.member?.roles.cache.has(MOD_ROLE_ID);
-
-        if (!isOwner && !isAdmin && !hasModRole) {
-            return message.reply({ content: '<a:emoji197:1537925769068806214> Bu paneli kurmak için yetkiniz bulunmamaktadır.' }).then(m => setTimeout(() => m.delete().catch(()=>{}), 5000));
-        }
-
         const serverIcon = message.guild?.iconURL({ dynamic: true }) || message.client.user.displayAvatarURL({ dynamic: true });
 
         const embed = new EmbedBuilder()
@@ -79,18 +68,10 @@ module.exports = {
     async handleInteraction(i) {
         const id = i.customId;
 
-        const isOwner = i.user.id === OWNER_ID;
-        const isAdmin = i.member?.permissions.has(PermissionFlagsBits.Administrator);
-        const hasModRole = i.member?.roles.cache.has(MOD_ROLE_ID);
-
-        if (!isOwner && !isAdmin && !hasModRole) {
-            return i.reply({ content: '<a:emoji197:1537925769068806214> Bu sistemi kullanmak için yetkiniz yok!', flags: 64 });
-        }
-
         if (id === 'btn_pro_sec') {
             const userAccounts = await Account.find({ userId: i.user.id });
             if (!userAccounts || userAccounts.length === 0) {
-                return i.reply({ content: '<a:emoji197:1537925769068806214> Sisteme kayıtlı tokenin yok!', flags: 64 });
+                return i.reply({ content: '<a:uyari:1538527482007789648> Sisteme kayıtlı tokenin yok!', flags: 64 });
             }
 
             const options = userAccounts.map((acc, index) => ({
@@ -138,15 +119,24 @@ module.exports = {
         if (id === 'btn_pro_durdur') {
             global.profilTokens.delete(i.user.id);
             global.profilTargets.delete(i.user.id);
-            await i.reply({ content: '<a:emoji197:1537925769068806214> Hedef ve seçili hesap sıfırlandı.', flags: 64 });
+            await i.reply({ content: '<a:uyari:1538527482007789648> Hedef ve seçili hesap sıfırlandı.', flags: 64 });
         }
 
         if (id === 'btn_pro_baslat') {
-            const selectedToken = global.profilTokens.get(i.user.id);
+            let selectedToken = global.profilTokens.get(i.user.id);
+            
+            if (!selectedToken) {
+                const userAccs = await Account.find({ userId: i.user.id });
+                if (userAccs && userAccs.length > 0) {
+                    selectedToken = userAccs[0].token;
+                    global.profilTokens.set(i.user.id, selectedToken);
+                }
+            }
+
             const targetId = global.profilTargets.get(i.user.id);
 
-            if (!selectedToken) return i.reply({ content: '<a:emoji197:1537925769068806214> Önce **Hesap Seç** butonundan bir kılık değiştirecek hesap seçmelisin!', flags: 64 });
-            if (!targetId) return i.reply({ content: '<a:emoji197:1537925769068806214> Önce **Kurban ID Gir** butonundan kimi kopyalayacağını belirtmelisin!', flags: 64 });
+            if (!selectedToken) return i.reply({ content: '<a:uyari:1538527482007789648> Sisteme kayıtlı token bulunamadı! Önce hesap ekle.', flags: 64 });
+            if (!targetId) return i.reply({ content: '<a:uyari:1538527482007789648> Önce **Kurban ID Gir** butonundan kimi kopyalayacağını belirtmelisin!', flags: 64 });
 
             await i.deferReply({ flags: 64 }).catch(() => {});
 
@@ -156,7 +146,7 @@ module.exports = {
                 });
 
                 if (!profileRes.ok) {
-                    return i.editReply(`<a:emoji197:1537925769068806214> Kurban bulunamadı veya profil API hatası! (Kod: ${profileRes.status})`);
+                    return i.editReply(`<a:uyari:1538527482007789648> Kurban bulunamadı veya profil API hatası! (Kod: ${profileRes.status})`);
                 }
 
                 const profileData = await profileRes.json();
@@ -196,16 +186,16 @@ module.exports = {
                 if (!updateRes.ok) {
                     const errData = await updateRes.json();
                     if (errData.avatar || errData.banner) {
-                        return i.editReply('<a:emoji197:1537925769068806214> **Klonlama Başarısız!**\nKurbanın hareketli (GIF) avatarı veya bannerı var, bunu kopyalamak için bu hesabında **Discord Nitro** olması gerekiyor.');
+                        return i.editReply('<a:uyari:1538527482007789648> **Klonlama Başarısız!**\nKurbanın hareketli (GIF) avatarı veya bannerı var, bunu kopyalamak için bu hesabında **Discord Nitro** olması gerekiyor.');
                     }
-                    return i.editReply(`<a:emoji197:1537925769068806214> Profil güncellenirken hata oluştu! Hata: ${JSON.stringify(errData)}`);
+                    return i.editReply(`<a:uyari:1538527482007789648> Profil güncellenirken hata oluştu! Hata: ${JSON.stringify(errData)}`);
                 }
 
                 return i.editReply(`<a:emoji110:1537925433763299418> **Operasyon Başarılı!**\n\nHesap kusursuz bir şekilde kurbanın (**${globalName}**) ikizine dönüştürüldü. Kurbanın tüm Görünen Adı, Profil Resmi, Afişi ve Biyografisi başarıyla çalındı!`);
 
             } catch (err) {
                 console.error("Profil Klonlama Hatası:", err);
-                return i.editReply('<a:emoji197:1537925769068806214> Klonlama sırasında sistemsel bir hata oluştu.');
+                return i.editReply('<a:uyari:1538527482007789648> Klonlama sırasında sistemsel bir hata oluştu.');
             }
         }
     }
