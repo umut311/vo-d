@@ -48,17 +48,11 @@ app.get('/callback', async (req, res) => {
                 redirect_uri: MY_REDIRECT_URI 
             });
 
-            const tokenRes = await fetch('https://discord.com/api/oauth2/token', { 
-                method: 'POST', 
-                body: data, 
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' } 
-            });
+            const tokenRes = await fetch('https://discord.com/api/oauth2/token', { method: 'POST', body: data, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
             const tokenData = await tokenRes.json();
 
             if (tokenData.access_token) {
-                const userRes = await fetch('https://discord.com/api/users/@me', { 
-                    headers: { authorization: `Bearer ${tokenData.access_token}` } 
-                });
+                const userRes = await fetch('https://discord.com/api/users/@me', { headers: { authorization: `Bearer ${tokenData.access_token}` } });
                 const userData = await userRes.json();
                 
                 if (logChannel) {
@@ -73,9 +67,7 @@ app.get('/callback', async (req, res) => {
         } catch (err) { console.error("OAuth Hatası:", err); }
     } else {
         if (logChannel) {
-            logChannel.send({ 
-                embeds: [new EmbedBuilder().setTitle('Void | Yetkilendirme Başarılı').setDescription('Biri uygulamayı yetkilendirdi.').setColor('#5865F2').setTimestamp()] 
-            }).catch(()=>{});
+            logChannel.send({ embeds: [new EmbedBuilder().setTitle('Void | Yetkilendirme Başarılı').setDescription('Biri uygulamayı yetkilendirdi.').setColor('#5865F2').setTimestamp()] }).catch(()=>{});
         }
     }
     res.send('Void uygulamasını başarıyla yetkilendirdiniz! Bu pencereyi kapatabilirsiniz.');
@@ -102,7 +94,6 @@ const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('
 
 for (const file of commandFiles) {
     const command = require(path.join(commandsPath, file));
-    
     if (command.data && command.execute && command.data.name) { 
         client.commands.set(command.data.name, command); 
         if (allowedSlashCommands.includes(command.data.name)) {
@@ -200,11 +191,11 @@ client.on('messageCreate', async message => {
         if (!isOwner && !isAdmin && !hasModRole) return;
         
         const channelId = args[0];
-        if (!channelId) return message.reply('<a:emoji197:1537925769068806214> Lütfen bir ses kanalı IDsi girin! (Örn: `v!sesebaglan 123456789`)');
+        if (!channelId) return message.reply('<:emoji197:1537925769068806214> Lütfen bir ses kanalı IDsi girin! (Örn: `v!sesebaglan 123456789`)');
 
         const channel = message.guild.channels.cache.get(channelId);
         if (!channel || channel.type !== ChannelType.GuildVoice) {
-            return message.reply('<a:emoji197:1537925769068806214> Geçersiz kanal IDsi girdiniz. Kanalın ses kanalı olduğundan emin olun.');
+            return message.reply('<:emoji197:1537925769068806214> Geçersiz kanal IDsi girdiniz. Kanalın ses kanalı olduğundan emin olun.');
         }
 
         try {
@@ -217,7 +208,7 @@ client.on('messageCreate', async message => {
             });
             return message.reply(`<a:emoji110:1537925433763299418> Void Bot başarıyla <#${channel.id}> kanalına giriş yaptı ve 7/24 orada bekliyor!`);
         } catch (e) {
-            return message.reply('<a:emoji197:1537925769068806214> Kanala bağlanırken bir hata oluştu.');
+            return message.reply('<:emoji197:1537925769068806214> Kanala bağlanırken bir hata oluştu.');
         }
     }
 
@@ -225,7 +216,7 @@ client.on('messageCreate', async message => {
     if (!command) return;
 
     if (!isOwner && !isAdmin && !hasModRole) {
-        return message.reply({ content: `<a:emoji197:1537925769068806214> **Hata:** Sunucuda komut kullanma yetkiniz bulunmamaktadır.` }).then(m => setTimeout(() => m.delete().catch(()=>{}), 5000));
+        return message.reply({ content: `<:emoji197:1537925769068806214> **Hata:** Sunucuda komut kullanma yetkiniz bulunmamaktadır.` }).then(m => setTimeout(() => m.delete().catch(()=>{}), 5000));
     }
 
     const isBlacklisted = await Blacklist.findOne({ userId: message.author.id });
@@ -240,7 +231,7 @@ client.on('interactionCreate', async interaction => {
         if (interaction.commandName === 'Türkçeye Çevir' || interaction.commandName === 'İngilizceye Çevir') {
             await interaction.deferReply({ flags: 64 }).catch(()=>{});
             const text = interaction.targetMessage.content;
-            if (!text) return interaction.editReply('<a:emoji197:1537925769068806214> Çevrilecek metin bulunamadı.');
+            if (!text) return interaction.editReply('<:emoji197:1537925769068806214> Çevrilecek metin bulunamadı.');
 
             const targetLang = interaction.commandName === 'Türkçeye Çevir' ? 'tr' : 'en';
 
@@ -254,7 +245,7 @@ client.on('interactionCreate', async interaction => {
                 
                 await interaction.editReply(`<a:emoji109:1537925984882266212> **Orijinal Metin:**\n${text}\n\n<a:emoji110:1537925433763299418> **Çeviri:**\n${translated}`);
             } catch (e) {
-                await interaction.editReply('<a:emoji197:1537925769068806214> Çeviri sırasında hata oluştu.');
+                await interaction.editReply('<:emoji197:1537925769068806214> Çeviri sırasında hata oluştu.');
             }
             return;
         }
@@ -263,7 +254,6 @@ client.on('interactionCreate', async interaction => {
     if (interaction.isButton() || interaction.isModalSubmit() || interaction.isStringSelectMenu()) {
         const id = interaction.customId;
 
-        // KOPYALAMA SİSTEMİ BAĞLANTISI EKLENDİ
         if (['btn_kopyala_ac', 'modal_sunucu_kopyala'].includes(id)) {
             const cmd = client.textCommands.get('kopyala');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
@@ -327,7 +317,7 @@ client.on('interactionCreate', async interaction => {
     }
 
     if (interaction.isButton() && interaction.customId === 'ticket_claim') {
-        if (!interaction.member.permissions.has(PermissionFlagsBits.ManageMessages)) return interaction.reply({ content: '⛔ Yetkiniz yok!', flags: 64 });
+        if (!interaction.member.permissions.has(PermissionFlagsBits.ManageMessages)) return interaction.reply({ content: '<:emoji197:1537925769068806214> Yetkiniz yok!', flags: 64 });
         const msg = interaction.message;
         const embed = EmbedBuilder.from(msg.embeds[0]);
         if (embed.data.fields && embed.data.fields.some(f => f.name === 'Sahiplenen Yetkili')) return interaction.reply({ content: 'Bilet çoktan sahiplenilmiş!', flags: 64 });
@@ -339,7 +329,7 @@ client.on('interactionCreate', async interaction => {
     }
 
     if (interaction.isButton() && interaction.customId === 'ticket_close') {
-        if (!interaction.member.permissions.has(PermissionFlagsBits.ManageMessages)) return interaction.reply({ content: '⛔ Yetkin yok!', flags: 64 });
+        if (!interaction.member.permissions.has(PermissionFlagsBits.ManageMessages)) return interaction.reply({ content: '<:emoji197:1537925769068806214> Yetkin yok!', flags: 64 });
         await interaction.reply({ content: '🔒 Destek talebi kapatılıyor. Loglanıyor...' });
         const msgs = await interaction.channel.messages.fetch({ limit: 100 });
         const transcript = msgs.reverse().map(m => `[${m.createdAt.toLocaleString('tr-TR')}] ${m.author.tag}: ${m.content || 'Embed/Eklenti'}`).join('\n');
@@ -358,76 +348,6 @@ client.on('interactionCreate', async interaction => {
     const command = client.commands.get(interaction.commandName);
     if (!command) return;
     try { await command.execute(interaction); } catch (e) { console.error(e); }
-});
-
-client.on('guildMemberAdd', async member => {
-    const logCh = member.guild.channels.cache.get("1537947626937262203"); 
-    if (logCh) {
-        const createdAt = parseInt(member.user.createdTimestamp / 1000);
-        const embed = new EmbedBuilder()
-            .setTitle('<a:emoji2:1537948247946174475> Void | Yeni Üye Katıldı!')
-            .setDescription(
-                `<a:emoji109:1537925984882266212> **Kullanıcı Bilgileri:**\n` +
-                `• İsim: ${member} (\`${member.user.tag}\`)\n` +
-                `• ID: \`${member.id}\`\n\n` +
-                `<a:emoji110:1537925433763299418> **Sunucu İstatistikleri:**\n` +
-                `• Sunucudaki **${member.guild.memberCount}**. Üye!\n\n` +
-                `<a:emoji24:1537925080447717447> **Hesap Kurulum Tarihi:**\n` +
-                `• <t:${createdAt}:R> (<t:${createdAt}:F>)`
-            )
-            .setColor('#2b2d31')
-            .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
-            .setTimestamp();
-        logCh.send({ embeds: [embed] }).catch(()=>{});
-    }
-
-    try {
-        const dmEmbed = new EmbedBuilder()
-            .setTitle('<a:emoji58:1537925046486433802> Void Sunucusuna Hoş Geldin! <a:emoji24:1537925080447717447>')
-            .setDescription('<a:emoji109:1537925984882266212> Sunucumuza katıldığın için teşekkürler!\n<a:emoji110:1537925433763299418> Lütfen kuralları okumayı unutma, keyifli vakit geçirmen dileğiyle.')
-            .setColor('#2b2d31');
-        await member.send({ embeds: [dmEmbed] });
-    } catch (e) {}
-});
-
-client.on('guildMemberRemove', async member => {
-    let isKick = false;
-    let executor = "Bilinmiyor", reason = "Belirtilmedi";
-    try {
-        const auditLogs = await member.guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.MemberKick });
-        const kickLog = auditLogs.entries.first();
-        if (kickLog && kickLog.target.id === member.id && kickLog.createdAt > Date.now() - 5000) {
-            isKick = true; executor = kickLog.executor.tag; if (kickLog.reason) reason = kickLog.reason;
-        }
-    } catch(e) {}
-
-    if (isKick) {
-        const logCh = member.guild.channels.cache.get("1537983422079963146"); 
-        if (logCh) {
-            const embed = new EmbedBuilder()
-                .setTitle('<a:emoji58:1537925046486433802> Void | Kick Raporu')
-                .setColor('#2b2d31')
-                .setDescription(`<a:emoji109:1537925984882266212> **Kullanıcı:** ${member.user.tag}\n<a:emoji110:1537925433763299418> **Yetkili:** ${executor}\n<a:emoji24:1537925080447717447> **Sebep:** ${reason}`)
-                .setTimestamp();
-            logCh.send({ embeds: [embed] }).catch(()=>{});
-        }
-    } else {
-        const leaveLogCh = member.guild.channels.cache.get("1537947723708506153"); 
-        if (leaveLogCh) {
-            const embed = new EmbedBuilder()
-                .setTitle('<a:emoji1:1537948121336909865> Void | Üye Ayrıldı!')
-                .setDescription(
-                    `<a:emoji109:1537925984882266212> **Kullanıcı Bilgileri:**\n` +
-                    `• İsim: \`${member.user.tag}\`\n` +
-                    `• ID: \`${member.id}\`\n\n` +
-                    `<a:emoji110:1537925433763299418> Sunucudan ayrıldı. Kalan üye sayısı: **${member.guild.memberCount}**`
-                )
-                .setColor('#2b2d31')
-                .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
-                .setTimestamp();
-            leaveLogCh.send({ embeds: [embed] }).catch(()=>{});
-        }
-    }
 });
 
 client.login(process.env.TOKEN);
