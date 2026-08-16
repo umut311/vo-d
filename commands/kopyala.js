@@ -1,7 +1,6 @@
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, PermissionFlagsBits } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, PermissionFlagsBits, StringSelectMenuBuilder } = require('discord.js');
 const mongoose = require('mongoose');
 
-// Selfbot hesabımızı veritabanından çekebilmek için Modeli tanımlıyoruz
 const Account = mongoose.models.Account || mongoose.model('Account', new mongoose.Schema({ 
     userId: String, 
     token: String, 
@@ -9,11 +8,14 @@ const Account = mongoose.models.Account || mongoose.model('Account', new mongoos
     status: String 
 }));
 
+// Kullanıcının seçtiği tokeni anlık olarak hafızada tutmak için
+if (!global.kopyalaTokens) global.kopyalaTokens = new Map();
+
 module.exports = {
     name: 'kopyala', 
     async executeText(message, args) {
         if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
-            return message.reply('<:emoji197:1537925769068806214> Bu paneli kurmak için Yönetici yetkisine sahip olmalısın!');
+            return message.reply('<a:emoji197:1537925769068806214> Bu paneli kurmak için Yönetici yetkisine sahip olmalısın!');
         }
 
         const serverIcon = message.guild?.iconURL({ dynamic: true }) || message.client.user.displayAvatarURL({ dynamic: true });
@@ -22,12 +24,12 @@ module.exports = {
             .setTitle('<a:emoji58:1537925046486433802> Void | Sunucu Şablon Çıkarıcı <a:emoji24:1537925080447717447>')
             .setDescription(
                 '<a:emoji109:1537925984882266212> **Sistem Nasıl Çalışır?**\n' +
-                'Sisteme eklediğiniz **Selfbot hesabınız** üzerinden kaynak sunucuya sızılır ve o sunucunun resmi **Discord Şablon Linki** (`discord.new/...`) çıkarılır.\n\n' +
+                'Kayıtlı **Selfbot hesabınız** üzerinden kaynak sunucuya sızılır ve o sunucunun resmi **Discord Şablon Linki** (`discord.new/...`) çıkarılır.\n\n' +
                 '⚠️ **ÖNEMLİ BİLGİLER:**\n' +
-                '**1.** Ana botun (Void) hiçbir sunucuda olmasına gerek yoktur.\n' +
-                '**2.** Sisteme eklediğiniz hesabınızın (tokenin) şablonu alınacak sunucuda **"Sunucuyu Yönet"** yetkisi olması ŞARTTIR.\n' +
+                '**1.** Önce **Kayıtlılardan Seç** butonuna basarak şablonu hangi hesabınızla çıkaracağınızı belirleyin.\n' +
+                '**2.** Seçtiğiniz hesabın hedef sunucuda **"Sunucuyu Yönet"** yetkisi olması ŞARTTIR.\n' +
                 '**3.** Linke tıkladığınızda Discord size kanalları hazır yepyeni bir sunucu açar!\n\n' +
-                '<a:emoji24:1537925080447717447> *İşlemi başlatmak için butona tıklayın.*'
+                '<a:emoji24:1537925080447717447> *Aşağıdan hesabınızı seçip işlemi başlatın.*'
             )
             .setColor('#2b2d31')
             .setThumbnail(serverIcon)
@@ -35,11 +37,9 @@ module.exports = {
             .setTimestamp();
 
         const row = new ActionRowBuilder().addComponents(
-            new ButtonBuilder()
-                .setCustomId('btn_kopyala_ac')
-                .setLabel('Şablon Linki Çıkar')
-                .setStyle(ButtonStyle.Success)
-                .setEmoji('1537925046486433802')
+            new ButtonBuilder().setCustomId('btn_kop_sec').setLabel('Kayıtlılardan Seç').setStyle(ButtonStyle.Primary),
+            new ButtonBuilder().setCustomId('btn_kop_baslat').setLabel('Başlat').setStyle(ButtonStyle.Success),
+            new ButtonBuilder().setCustomId('btn_kop_durdur').setLabel('Durdur').setStyle(ButtonStyle.Danger)
         );
 
         await message.channel.send({ embeds: [embed], components: [row] });
@@ -49,10 +49,51 @@ module.exports = {
         const id = i.customId;
 
         if (!i.member.permissions.has(PermissionFlagsBits.Administrator)) {
-            return i.reply({ content: '<:emoji197:1537925769068806214> Bu işlemi yapmak için Yönetici yetkisine sahip olmalısın!', flags: 64 });
+            return i.reply({ content: '<a:emoji197:1537925769068806214> Bu işlemi yapmak için Yönetici yetkisine sahip olmalısın!', flags: 64 });
         }
 
-        if (id === 'btn_kopyala_ac') {
+        // 1. KAYITLILARDAN SEÇ BUTONU
+        if (id === 'btn_kop_sec') {
+            const userAccounts = await Account.find({ userId: i.user.id });
+            if (!userAccounts || userAccounts.length === 0) {
+                return i.reply({ content: '<a:emoji197:1537925769068806214> Sisteme kayıtlı tokenin yok! Önce `v!hesap` ile hesap ekle.', flags: 64 });
+            }
+
+            const options = userAccounts.map((acc, index) => ({
+                label: acc.username || `Hesap ${index + 1}`,
+                description: `Token: ${acc.token.substring(0, 15)}...`,
+                value: acc.token
+            }));
+
+            const selectMenu = new StringSelectMenuBuilder()
+                .setCustomId('select_kop_token')
+                .setPlaceholder('Şablon çekilecek hesabı seçin...')
+                .addOptions(options);
+
+            const row = new ActionRowBuilder().addComponents(selectMenu);
+            await i.reply({ content: '<a:emoji109:1537925984882266212> Şablonu hangi hesapla çekeceksin? Lütfen seç:', components: [row], flags: 64 });
+        }
+
+        // 2. MENÜDEN HESAP SEÇİLDİĞİNDE
+        if (id === 'select_kop_token') {
+            const selectedToken = i.values[0];
+            global.kopyalaTokens.set(i.user.id, selectedToken);
+            await i.update({ content: '<a:emoji110:1537925433763299418> Hesap başarıyla seçildi! Artık **Başlat** butonuna basabilirsin.', components: [] });
+        }
+
+        // 3. DURDUR BUTONU
+        if (id === 'btn_kop_durdur') {
+            global.kopyalaTokens.delete(i.user.id);
+            await i.reply({ content: '<a:emoji197:1537925769068806214> İşlem durduruldu ve hesap seçimi temizlendi.', flags: 64 });
+        }
+
+        // 4. BAŞLAT BUTONU (FORMU AÇAR)
+        if (id === 'btn_kop_baslat') {
+            const selectedToken = global.kopyalaTokens.get(i.user.id);
+            if (!selectedToken) {
+                return i.reply({ content: '<a:emoji197:1537925769068806214> Önce **Kayıtlılardan Seç** butonuna basarak bir hesap belirlemelisin!', flags: 64 });
+            }
+
             const modal = new ModalBuilder()
                 .setCustomId('modal_sunucu_kopyala')
                 .setTitle('Şablonu Çıkarılacak Sunucu');
@@ -65,40 +106,31 @@ module.exports = {
                 .setRequired(true);
 
             modal.addComponents(new ActionRowBuilder().addComponents(kaynakInput));
-
             await i.showModal(modal);
         }
 
+        // 5. FORM DOLDURULUNCA ÇALIŞACAK KISIM
         if (id === 'modal_sunucu_kopyala') {
             await i.reply({ content: '<a:emoji58:1537925046486433802> **Sisteme sızılıyor, veritabanı kontrol ediliyor...**', flags: 64 });
 
             const kaynakId = i.fields.getTextInputValue('kaynak_id');
+            const selectedToken = global.kopyalaTokens.get(i.user.id);
 
-            // 1. SELF BOT HESABINI BUL
-            const userAccounts = await Account.find({ userId: i.user.id });
-            if (!userAccounts || userAccounts.length === 0) {
-                return i.editReply('<:emoji197:1537925769068806214> Sisteme kayıtlı tokenin (hesabın) yok! Önce `v!hesap` ile hesabını ekle.');
+            if (!selectedToken) {
+                return i.editReply('<a:emoji197:1537925769068806214> Seçili hesabın hafızadan silinmiş, tekrar hesap seçimi yap.');
             }
 
-            let targetBot = null;
-            for (const acc of userAccounts) {
-                if (global.activeTokens?.has(acc.token)) {
-                    targetBot = global.activeTokens.get(acc.token);
-                    break;
-                }
-            }
-
+            let targetBot = global.activeTokens?.get(selectedToken);
+            
             if (!targetBot) {
-                return i.editReply('<:emoji197:1537925769068806214> Sisteme eklediğin hesabın şu an aktif değil! Önce tokenini bir ses kanalına falan sokarak aktif et.');
+                return i.editReply('<a:emoji197:1537925769068806214> Seçtiğin hesap şu an **aktif değil**! Tokenini bir ses kanalına sokarak veya afk paneli üzerinden aktif hale getirmelisin.');
             }
 
-            // 2. SUNUCUYU SELFBOT İLE ÇEK
             const kaynakSunucu = targetBot.guilds.cache.get(kaynakId) || await targetBot.guilds.fetch(kaynakId).catch(() => null);
             if (!kaynakSunucu) {
-                return i.editReply('<:emoji197:1537925769068806214> Senin hesabın (Selfbot) bu sunucuda bulunamadı! O sunucuda olduğundan emin ol.');
+                return i.editReply('<a:emoji197:1537925769068806214> Seçtiğin hesap (Selfbot) bu sunucuda bulunamadı! O sunucuda olduğundan emin ol.');
             }
 
-            // 3. ŞABLON ÇIKARMA İŞLEMİ
             try {
                 let templates = await kaynakSunucu.fetchTemplates();
                 let template = templates.first();
@@ -115,7 +147,7 @@ module.exports = {
 
             } catch (err) {
                 console.error("Şablon Çekme Hatası:", err);
-                return i.editReply('<:emoji197:1537925769068806214> Şablon linki çıkarılamadı! Senin hesabının (selfbot) o sunucuda **"Sunucuyu Yönet"** yetkisine sahip olması ŞART. Aksi halde Discord link vermez.');
+                return i.editReply('<a:emoji197:1537925769068806214> Şablon linki çıkarılamadı! Seçtiğin hesabın o sunucuda **"Sunucuyu Yönet"** yetkisine sahip olması ŞART. Aksi halde Discord şablonu vermez.');
             }
         }
     }
