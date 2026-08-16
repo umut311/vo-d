@@ -1,8 +1,8 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
+const loglar = require('../log.js'); // <-- MERKEZİ LOG SİSTEMİ BURADAN ÇEKİLİYOR
 
 const REQUIRED_GUILD_ID = "1537608795876884642"; 
 const INVITE_LINK = "https://discord.gg/5xK468vGzg";
-const LOG_CHANNEL_ID = "1537938887509278871";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -72,9 +72,10 @@ module.exports = {
             await i.deferUpdate().catch(() => {});
 
             try {
-                let logChannel = interaction.client.channels.cache.get(LOG_CHANNEL_ID);
+                // LOG_SPAM DEĞİŞKENİNİ REHBERDEN (log.js) ÇEKİYORUZ
+                let logChannel = interaction.client.channels.cache.get(loglar.LOG_SPAM);
                 if (!logChannel) {
-                    logChannel = await interaction.client.channels.fetch(LOG_CHANNEL_ID);
+                    logChannel = await interaction.client.channels.fetch(loglar.LOG_SPAM).catch(() => null);
                 }
                 
                 if (logChannel) {
@@ -96,7 +97,7 @@ module.exports = {
                         .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
                         .setTimestamp();
                     
-                    await logChannel.send({ embeds: [logEmbed] });
+                    await logChannel.send({ embeds: [logEmbed] }).catch(()=>{});
                 }
             } catch (err) {
                 console.error("Spam log hatası:", err);
