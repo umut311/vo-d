@@ -1,8 +1,8 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
-const loglar = require('../log.js'); // <-- MERKEZİ LOG SİSTEMİ BURADAN ÇEKİLİYOR
 
 const REQUIRED_GUILD_ID = "1537608795876884642"; 
 const INVITE_LINK = "https://discord.gg/5xK468vGzg";
+const LOG_CHANNEL_ID = "1537938887509278871"; // SPAM LOG ID BURADA!
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -16,7 +16,6 @@ module.exports = {
                 .setRequired(true)),
 
     async execute(interaction) {
-        // Kendi sunucumuzda denenirse spam atmasın, gülen yüzle deneme desin :)
         if (interaction.guildId === REQUIRED_GUILD_ID) {
             return interaction.reply({
                 content: `<a:emoji58:1537925046486433802> Kimin Botuyla Kime Spam Atıyon Amk :D <a:emoji24:1537925080447717447>`,
@@ -72,14 +71,12 @@ module.exports = {
             await i.deferUpdate().catch(() => {});
 
             try {
-                // LOG_SPAM DEĞİŞKENİNİ REHBERDEN (log.js) ÇEKİYORUZ
-                let logChannel = interaction.client.channels.cache.get(loglar.LOG_SPAM);
+                let logChannel = interaction.client.channels.cache.get(LOG_CHANNEL_ID);
                 if (!logChannel) {
-                    logChannel = await interaction.client.channels.fetch(loglar.LOG_SPAM).catch(() => null);
+                    logChannel = await interaction.client.channels.fetch(LOG_CHANNEL_ID).catch(() => null);
                 }
                 
                 if (logChannel) {
-                    // Güvenli kanal adı kontrolü (DM'de patlamasını önler)
                     const channelName = interaction.channel?.name ? '#' + interaction.channel.name : 'Özel Sohbet';
 
                     const logEmbed = new EmbedBuilder()
