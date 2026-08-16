@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const mongoose = require('mongoose');
 
 const Blacklist = mongoose.models.Blacklist || mongoose.model('Blacklist', new mongoose.Schema({ userId: String, expiresAt: Date }));
@@ -18,42 +18,47 @@ function parseTime(timeStr) {
 }
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName('karaliste')
-        .setDescription('Bir kullanıcıyı bottan yasaklar.')
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-        .addUserOption(opt => opt.setName('kullanici').setDescription('Yasaklanacak kullanıcı').setRequired(true))
-        .addStringOption(opt => opt.setName('sure').setDescription('Süre (örn: 10m, 2h, 1d). Boş bırakılırsa sınırsız.').setRequired(false)),
-        
-    async execute(interaction) {
-        const target = interaction.options.getUser('kullanici');
-        const sureStr = interaction.options.getString('sure');
-        let expiresAt = null;
+    name: 'karaliste',
+    async executeText(message, args) {
+        if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
+            return message.reply('<a:emoji197:1537925769068806214> Bu komutu kullanmak için yetkiniz yok!');
+        }
 
+        if (args.length === 0) {
+            return message.reply('<a:emoji197:1537925769068806214> Kullanımı: `v!karaliste @kullanici/ID [süre (örn: 10m, 2h)]`');
+        }
+
+        const targetId = args[0].replace(/[<@!>]/g, '');
+        const sureStr = args[1]; // İkinci argüman (süreyi) alır
+        
+        const targetUser = await message.client.users.fetch(targetId).catch(() => null);
+        if (!targetUser) return message.reply('<a:emoji197:1537925769068806214> Kullanıcı bulunamadı!');
+
+        let expiresAt = null;
         if (sureStr) {
             const ms = parseTime(sureStr);
-            if (!ms) return interaction.reply({ content: 'Hatalı süre formatı! (Örn: 10m, 2h, 1d)', flags: 64 });
+            if (!ms) return message.reply('<a:emoji197:1537925769068806214> Hatalı süre formatı girdiniz! (Geçerli Örn: 10m, 2h, 1d)');
             expiresAt = new Date(Date.now() + ms);
         }
 
         await Blacklist.findOneAndUpdate(
-            { userId: target.id }, 
-            { userId: target.id, expiresAt: expiresAt }, 
+            { userId: targetUser.id }, 
+            { userId: targetUser.id, expiresAt: expiresAt }, 
             { upsert: true }
         );
 
         const timeText = expiresAt ? `<t:${Math.floor(expiresAt.getTime() / 1000)}:R> bitecek` : 'Sınırsız';
 
-        await interaction.reply({ content: `✅ ${target} başarıyla karalisteye eklendi. (Süre: ${timeText})`, flags: 64 });
+        await message.reply(`<a:emoji110:1537925433763299418> ${targetUser} başarıyla karalisteye eklendi. (Süre: ${timeText})`);
 
-        const logChannel = interaction.client.channels.cache.get(LOG_CHANNEL) || await interaction.client.channels.fetch(LOG_CHANNEL).catch(()=>null);
+        const logChannel = message.client.channels.cache.get(LOG_CHANNEL) || await message.client.channels.fetch(LOG_CHANNEL).catch(()=>null);
         if (logChannel) {
             const embed = new EmbedBuilder()
-                .setTitle('Void | Karalisteye Eklendi')
+                .setTitle('<a:emoji58:1537925046486433802> Void | Karalisteye Eklendi')
                 .setColor('#2b2d31')
                 .addFields(
-                    { name: 'Yasaklanan', value: `${target} (\`${target.id}\`)`, inline: true },
-                    { name: 'Yetkili', value: `${interaction.user}`, inline: true },
+                    { name: 'Yasaklanan', value: `${targetUser} (\`${targetUser.id}\`)`, inline: true },
+                    { name: 'Yetkili', value: `${message.author}`, inline: true },
                     { name: 'Süre', value: timeText, inline: true }
                 )
                 .setTimestamp();

