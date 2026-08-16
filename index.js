@@ -36,7 +36,7 @@ app.get('/', (req, res) => res.send('Void Bot aktif!'));
 
 app.get('/callback', async (req, res) => {
     const code = req.query.code;
-    const logChannel = client.channels.cache.get("1537947423710912694"); // YETKİ LOG KANALI
+    const logChannel = client.channels.cache.get("1537947423710912694"); 
 
     if (code) {
         try {
@@ -91,12 +91,11 @@ const client = new Client({ intents: [ GatewayIntentBits.Guilds, GatewayIntentBi
 client.commands = new Collection();
 client.textCommands = new Collection();
 
-// SADECE BUNLAR SLASH KOMUTU OLARAK KALACAK
 const slashCommandsData = [
     { name: 'Türkçeye Çevir', type: 3, integration_types: [0, 1], contexts: [0, 1, 2] },
     { name: 'İngilizceye Çevir', type: 3, integration_types: [0, 1], contexts: [0, 1, 2] }
 ];
-const allowedSlashCommands = ['spam', 'gmmesaj', 'dmtemizle']; // Bu 3'ü hariç her şey silinecek!
+const allowedSlashCommands = ['spam', 'gmmesaj', 'dmtemizle']; 
 
 const commandsPath = path.join(__dirname, 'commands');
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
@@ -104,14 +103,12 @@ const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('
 for (const file of commandFiles) {
     const command = require(path.join(commandsPath, file));
     
-    // Slash olarak saklanacaklara izin ver
     if (command.data && command.execute && command.data.name) { 
         client.commands.set(command.data.name, command); 
         if (allowedSlashCommands.includes(command.data.name)) {
             slashCommandsData.push(command.data.toJSON()); 
         }
     }
-    // Prefix (v!) komutları olarak yükle
     if (command.name && command.executeText) {
         client.textCommands.set(command.name, command);
     }
@@ -124,15 +121,11 @@ client.once('ready', async () => {
     try {
         const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
         await rest.put(Routes.applicationCommands(client.user.id), { body: slashCommandsData });
-        console.log('[!] İstenmeyen Slash Komutları Temizlendi.');
     } catch (error) { console.error(error); }
 });
 
-// =====================================================================
-// BAN, UNBAN, KICK VE MESAJ LOG SİSTEMLERİ
-// =====================================================================
 client.on('guildBanAdd', async ban => {
-    const log = ban.guild.channels.cache.get("1537983368375828610"); // BAN LOG KANALI
+    const log = ban.guild.channels.cache.get("1537983368375828610"); 
     if (!log) return;
     let yetkili = "Bilinmiyor", sebep = ban.reason || "Belirtilmedi";
     try {
@@ -149,7 +142,7 @@ client.on('guildBanAdd', async ban => {
 });
 
 client.on('guildBanRemove', async ban => {
-    const log = ban.guild.channels.cache.get("1537983387200127006"); // UNBAN LOG KANALI
+    const log = ban.guild.channels.cache.get("1537983387200127006"); 
     if (!log) return;
     let yetkili = "Bilinmiyor";
     try {
@@ -164,11 +157,8 @@ client.on('guildBanRemove', async ban => {
         .setTimestamp();
     log.send({ embeds: [embed] }).catch(()=>{});
 });
-// =====================================================================
 
 client.on('messageCreate', async message => {
-    
-    // BOOST LOG SİSTEMİ
     const boostTypes = [8, 9, 10, 11]; 
     if (boostTypes.includes(message.type)) {
         const boostChannel = client.channels.cache.get("1538176283161403434");
@@ -273,6 +263,12 @@ client.on('interactionCreate', async interaction => {
     if (interaction.isButton() || interaction.isModalSubmit() || interaction.isStringSelectMenu()) {
         const id = interaction.customId;
 
+        // KOPYALAMA SİSTEMİ BAĞLANTISI EKLENDİ
+        if (['btn_kopyala_ac', 'modal_sunucu_kopyala'].includes(id)) {
+            const cmd = client.textCommands.get('kopyala');
+            if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
+        }
+
         if (['btn_hesap_panel', 'tk_gor', 'tk_ekle', 'tk_sil', 'modal_tk_ekle'].includes(id)) {
             const cmd = client.textCommands.get('hesap');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
@@ -349,7 +345,7 @@ client.on('interactionCreate', async interaction => {
         const transcript = msgs.reverse().map(m => `[${m.createdAt.toLocaleString('tr-TR')}] ${m.author.tag}: ${m.content || 'Embed/Eklenti'}`).join('\n');
         const attachment = new AttachmentBuilder(Buffer.from(transcript, 'utf-8'), { name: `${interaction.channel.name}-log.txt` });
         
-        const logChannel = interaction.client.channels.cache.get("1537980809670168576"); // TICKET LOG KANALI
+        const logChannel = interaction.client.channels.cache.get("1537980809670168576");
         if (logChannel) {
             const claimer = interaction.message.embeds[0].fields?.find(f => f.name === 'Sahiplenen Yetkili')?.value || 'Sahiplenilmedi';
             const logEmbed = new EmbedBuilder().setTitle('🎫 Ticket Kapatıldı').addFields({ name: 'Kanal', value: interaction.channel.name, inline: true }, { name: 'Kapatan', value: `${interaction.user}`, inline: true }, { name: 'İlgilenen', value: claimer, inline: true }).setColor('#2b2d31').setTimestamp();
@@ -364,7 +360,6 @@ client.on('interactionCreate', async interaction => {
     try { await command.execute(interaction); } catch (e) { console.error(e); }
 });
 
-// SUNUCUYA KATILANLARI LOGLAMA
 client.on('guildMemberAdd', async member => {
     const logCh = member.guild.channels.cache.get("1537947626937262203"); 
     if (logCh) {
@@ -395,7 +390,6 @@ client.on('guildMemberAdd', async member => {
     } catch (e) {}
 });
 
-// SUNUCUDAN AYRILANLARI VE KICK YİYENLERİ LOGLAMA
 client.on('guildMemberRemove', async member => {
     let isKick = false;
     let executor = "Bilinmiyor", reason = "Belirtilmedi";
@@ -408,7 +402,7 @@ client.on('guildMemberRemove', async member => {
     } catch(e) {}
 
     if (isKick) {
-        const logCh = member.guild.channels.cache.get("1537983422079963146"); // KICK LOG KANALI
+        const logCh = member.guild.channels.cache.get("1537983422079963146"); 
         if (logCh) {
             const embed = new EmbedBuilder()
                 .setTitle('<a:emoji58:1537925046486433802> Void | Kick Raporu')
@@ -418,7 +412,7 @@ client.on('guildMemberRemove', async member => {
             logCh.send({ embeds: [embed] }).catch(()=>{});
         }
     } else {
-        const leaveLogCh = member.guild.channels.cache.get("1537947723708506153"); // ÇIKIŞ LOGU
+        const leaveLogCh = member.guild.channels.cache.get("1537947723708506153"); 
         if (leaveLogCh) {
             const embed = new EmbedBuilder()
                 .setTitle('<a:emoji1:1537948121336909865> Void | Üye Ayrıldı!')
