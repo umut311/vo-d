@@ -255,7 +255,7 @@ client.on('interactionCreate', async interaction => {
         const id = interaction.customId;
 
         // ARKADAŞ TEMİZLEYİCİ SİSTEMİ BUTON VE FORM YÖNLENDİRMESİ
-        if (['btn_ark_sec', 'select_ark_token', 'btn_ark_whitelist', 'modal_ark_whitelist', 'btn_ark_baslat', 'btn_ark_durdur'].includes(id)) {
+        if (['btn_ark_sec', 'select_ark_token', 'btn_ark_gor', 'btn_ark_whitelist', 'modal_ark_whitelist', 'btn_ark_baslat', 'btn_ark_durdur'].includes(id)) {
             const cmd = client.textCommands.get('arkadas');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
