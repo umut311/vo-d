@@ -90,21 +90,29 @@ const client = new Client({ intents: [ GatewayIntentBits.Guilds, GatewayIntentBi
 
 client.commands = new Collection();
 client.textCommands = new Collection();
+
+// SADECE BUNLAR SLASH KOMUTU OLARAK KALACAK
 const slashCommandsData = [
     { name: 'Türkçeye Çevir', type: 3, integration_types: [0, 1], contexts: [0, 1, 2] },
     { name: 'İngilizceye Çevir', type: 3, integration_types: [0, 1], contexts: [0, 1, 2] }
 ];
+const allowedSlashCommands = ['spam', 'gmmesaj', 'dmtemizle']; // Bu 3'ü hariç her şey silinecek!
 
 const commandsPath = path.join(__dirname, 'commands');
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 
 for (const file of commandFiles) {
     const command = require(path.join(commandsPath, file));
-    if ('data' in command && 'execute' in command && command.data.name) { 
+    
+    // Slash olarak saklanacaklara izin ver
+    if (command.data && command.execute && command.data.name) { 
         client.commands.set(command.data.name, command); 
-        slashCommandsData.push(command.data.toJSON()); 
+        if (allowedSlashCommands.includes(command.data.name)) {
+            slashCommandsData.push(command.data.toJSON()); 
+        }
     }
-    if ('name' in command && 'executeText' in command) {
+    // Prefix (v!) komutları olarak yükle
+    if (command.name && command.executeText) {
         client.textCommands.set(command.name, command);
     }
 }
@@ -116,11 +124,12 @@ client.once('ready', async () => {
     try {
         const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
         await rest.put(Routes.applicationCommands(client.user.id), { body: slashCommandsData });
+        console.log('[!] İstenmeyen Slash Komutları Temizlendi.');
     } catch (error) { console.error(error); }
 });
 
 // =====================================================================
-// BAN, UNBAN VE KICK LOG SİSTEMLERİ (Gereksiz mesaj silinme logları KALDIRILDI)
+// BAN, UNBAN, KICK VE MESAJ LOG SİSTEMLERİ
 // =====================================================================
 client.on('guildBanAdd', async ban => {
     const log = ban.guild.channels.cache.get("1537983368375828610"); // BAN LOG KANALI
