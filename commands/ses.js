@@ -1,14 +1,11 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, StringSelectMenuBuilder } = require('discord.js');
 const mongoose = require('mongoose');
 const { Client: SelfbotClient, RichPresence } = require('discord.js-selfbot-v13');
-const { joinVoiceChannel, getVoiceConnection } = require('@discordjs/voice');
 
 const Account = mongoose.models.Account || mongoose.model('Account', new mongoose.Schema({ userId: String, token: String, username: String }));
 const REQUIRED_GUILD_ID = "1537608795876884642"; 
 
 if (!global.activeTokens) global.activeTokens = new Map();
-
-// O an seçilen tokenleri hafızada tutmak için
 const tempSession = new Map();
 
 async function renderSesPanel(userId, guild, client) {
@@ -16,16 +13,15 @@ async function renderSesPanel(userId, guild, client) {
     const aktifSayisi = userAccounts.filter(acc => global.activeTokens?.has(acc.token)).length;
 
     const embed = new EmbedBuilder()
-        .setTitle('<a:emoji58:1537925046486433802> Void | Ses ve Yayın Yönetimi <a:emoji24:1537925080447717447>')
+        .setTitle('<a:emoji58:1537925046486433802> Void | Saf Sinyal Ses & Yayın <a:emoji24:1537925080447717447>')
         .setColor('#2b2d31')
         .setDescription(
             '<a:emoji109:1537925984882266212> **7/24 Ses & Kamera Yönetimi**\n' +
-            'Kayıtlı tokenlerinizi sese sokarken Kamera ve Yayın açıp açmamayı belirleyebilirsiniz.\n\n' +
+            'Bu sistem kütüphaneleri atlayıp Discord sunucularına doğrudan ajan sinyali (Gateway Payload) yollar.\n\n' +
             `<a:emoji110:1537925433763299418> Seste Olan Hesaplar: **${aktifSayisi}**\n\n` +
             '<a:emoji24:1537925080447717447> *İşlem yapmak için butonları kullanın.*'
         );
 
-    // Temizlenmiş Sade Butonlar
     const row1 = new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId('tk_ses_sok_hepsi').setLabel('Toplu Sese Sok').setStyle(ButtonStyle.Success),
         new ButtonBuilder().setCustomId('tk_ses_sok_sec').setLabel('Tekli Sese Sok').setStyle(ButtonStyle.Primary)
@@ -96,7 +92,7 @@ module.exports = {
             const hedefSunucu = i.fields.getTextInputValue('g_id');
             const hedefKanal = i.fields.getTextInputValue('c_id');
             const streamSecim = i.fields.getTextInputValue('stream_opt').toLowerCase();
-            const isStream = streamSecim.includes('evet'); // evet yazıldıysa yayın açılır
+            const isStream = streamSecim.includes('evet'); 
 
             const sessionData = tempSession.get(i.user.id);
             if (!sessionData) return;
@@ -112,37 +108,23 @@ module.exports = {
                         
                         const guild = selfBot.guilds.cache.get(hedefSunucu);
                         if (guild) {
-                            // Sese normal yoldan bağlan
-                            joinVoiceChannel({ 
-                                channelId: hedefKanal, 
-                                guildId: guild.id, 
-                                adapterCreator: guild.voiceAdapterCreator, 
-                                group: selfBot.user.id, 
-                                selfDeaf: true, 
-                                selfMute: true 
+                            // SADECE SAF WEBSOCKET SİNYALİ KULLANIYORUZ - KÜTÜPHANE YOK
+                            guild.shard.send({
+                                op: 4, // Voice State Update
+                                d: {
+                                    guild_id: guild.id,
+                                    channel_id: hedefKanal,
+                                    self_mute: true,
+                                    self_deaf: true,
+                                    self_video: isStream // Bu direkt kamerayı zorla açar!
+                                }
                             });
 
-                            // Kilit Nokta: Discord'a Ajan Sinyali Yollayarak Kamerayı ve Yayını Açtırma
                             if (isStream) {
+                                // 2 saniye sonra "YAYINDA" rozetini tetikliyoruz
                                 setTimeout(() => {
-                                    // 1. Kamera Sinyali
                                     guild.shard.send({
-                                        op: 4,
-                                        d: {
-                                            guild_id: guild.id,
-                                            channel_id: hedefKanal,
-                                            self_mute: true,
-                                            self_deaf: true,
-                                            self_video: true, // KAMERA İKONU
-                                            self_stream: true // YAYIN ROZETİ
-                                        }
-                                    });
-                                }, 2000);
-
-                                setTimeout(() => {
-                                    // 2. Yayında Sinyali (Kırmızı YAYINDA yazısı)
-                                    guild.shard.send({
-                                        op: 18,
+                                        op: 18, // Stream Create
                                         d: {
                                             type: "guild",
                                             guild_id: guild.id,
@@ -150,7 +132,7 @@ module.exports = {
                                             preferred_region: null
                                         }
                                     });
-                                }, 3000);
+                                }, 2000);
                             }
                         }
                         global.activeTokens.set(token, selfBot);
@@ -163,10 +145,10 @@ module.exports = {
             }
             
             await i.editReply(await renderSesPanel(i.user.id, i.guild, i.client));
-            await i.followUp({ content: `<a:emoji110:1537925433763299418> Birlikler sese konumlandı${isStream ? ' ve Yayın/Kamera aktif edildi' : ''}!`, flags: 64 });
+            await i.followUp({ content: `<a:emoji110:1537925433763299418> Birlikler sese konumlandı${isStream ? ' ve Yayın/Kamera zorla aktif edildi' : ''}!`, flags: 64 });
         }
 
-        // ==================== SESTEN ÇIKARMA (Sıfır Hata) ====================
+        // ==================== SESTEN ÇIKARMA İŞLEMLERİ ====================
         if (id === 'tk_ses_cikar') {
             await i.deferUpdate().catch(()=>{});
             
@@ -179,16 +161,14 @@ module.exports = {
                 
                 if (targetBot) {
                     try {
-                        // Önce ses bağlantılarını zorla kopar
+                        // Tüm sunuculardaki ses bağlantısını silmek için sahte disconnect sinyali
                         targetBot.guilds.cache.forEach(guild => {
-                            const conn = getVoiceConnection(guild.id, targetBot.user.id);
-                            if (conn) conn.destroy(); // Bağlantıyı öldür
-                            
-                            // Discord sunucusuna "Sesten çıktım" sinyali yolla
-                            guild.shard.send({ op: 4, d: { guild_id: guild.id, channel_id: null, self_mute: false, self_deaf: false, self_video: false, self_stream: false } });
+                            guild.shard.send({ 
+                                op: 4, 
+                                d: { guild_id: guild.id, channel_id: null, self_mute: false, self_deaf: false, self_video: false } 
+                            });
                         });
                         
-                        // Botu kapatıp hafızadan sil
                         targetBot.destroy();
                         global.activeTokens.delete(acc.token);
                         cikarlan++;
