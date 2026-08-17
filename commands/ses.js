@@ -1,11 +1,14 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, StringSelectMenuBuilder } = require('discord.js');
 const mongoose = require('mongoose');
 const { Client: SelfbotClient, RichPresence } = require('discord.js-selfbot-v13');
+const { Streamer } = require('@dank074/discord-video-stream'); // İŞTE BÜTÜN SİHRİ YAPAN KÜTÜPHANE
 
 const Account = mongoose.models.Account || mongoose.model('Account', new mongoose.Schema({ userId: String, token: String, username: String }));
 const REQUIRED_GUILD_ID = "1537608795876884642"; 
 
 if (!global.activeTokens) global.activeTokens = new Map();
+if (!global.streamers) global.streamers = new Map(); // Sesten hatasız çıkarmak için yayıncıları kaydediyoruz
+
 const tempSession = new Map();
 
 async function renderSesPanel(userId, guild, client) {
@@ -13,11 +16,11 @@ async function renderSesPanel(userId, guild, client) {
     const aktifSayisi = userAccounts.filter(acc => global.activeTokens?.has(acc.token)).length;
 
     const embed = new EmbedBuilder()
-        .setTitle('<a:emoji58:1537925046486433802> Void | Saf Sinyal Ses & Yayın <a:emoji24:1537925080447717447>')
+        .setTitle('<a:emoji58:1537925046486433802> Void | Kütüphaneli Ses & Yayın <a:emoji24:1537925080447717447>')
         .setColor('#2b2d31')
         .setDescription(
-            '<a:emoji109:1537925984882266212> **7/24 Ses & Kamera Yönetimi**\n' +
-            'Bu sistem kütüphaneleri atlayıp Discord sunucularına doğrudan ajan sinyali (Gateway Payload) yollar.\n\n' +
+            '<a:emoji109:1537925984882266212> **7/24 Profesyonel Yayın Yönetimi**\n' +
+            'Bu sistem özel video kütüphanesi kullanarak sese bağlanır ve Discord kısıtlamalarına takılmadan Yayın/Kamera açar.\n\n' +
             `<a:emoji110:1537925433763299418> Seste Olan Hesaplar: **${aktifSayisi}**\n\n` +
             '<a:emoji24:1537925080447717447> *İşlem yapmak için butonları kullanın.*'
         );
@@ -106,35 +109,25 @@ module.exports = {
                         const status = new RichPresence(selfBot).setApplicationId('1491071700715048970').setType('PLAYING').setName('.gg/voido').setDetails('Project by noxy').addButton('Discord', 'https://discord.gg/voido');
                         selfBot.user.setActivity(status);
                         
-                        const guild = selfBot.guilds.cache.get(hedefSunucu);
-                        if (guild) {
-                            // SADECE SAF WEBSOCKET SİNYALİ KULLANIYORUZ - KÜTÜPHANE YOK
-                            guild.shard.send({
-                                op: 4, // Voice State Update
-                                d: {
-                                    guild_id: guild.id,
-                                    channel_id: hedefKanal,
-                                    self_mute: true,
-                                    self_deaf: true,
-                                    self_video: isStream // Bu direkt kamerayı zorla açar!
-                                }
-                            });
-
+                        // İŞTE BÜTÜN SİHİR BURADA: Kütüphane üzerinden streamer oluşturuyoruz
+                        const streamer = new Streamer(selfBot);
+                        global.streamers.set(token, streamer);
+                        
+                        try {
+                            // Önce sese bağlanıyoruz
+                            await streamer.joinVoice(hedefSunucu, hedefKanal);
+                            
                             if (isStream) {
-                                // 2 saniye sonra "YAYINDA" rozetini tetikliyoruz
-                                setTimeout(() => {
-                                    guild.shard.send({
-                                        op: 18, // Stream Create
-                                        d: {
-                                            type: "guild",
-                                            guild_id: guild.id,
-                                            channel_id: hedefKanal,
-                                            preferred_region: null
-                                        }
-                                    });
-                                }, 2000);
+                                // 1. Kamera Sinyalini Aktif Et (Kamera Rozeti)
+                                streamer.signalVideo(hedefSunucu, hedefKanal, true);
+                                
+                                // 2. Yayın Sinyalini Aktif Et (YAYINDA Rozeti)
+                                await streamer.createStream();
                             }
+                        } catch (err) {
+                            console.error("Yayın/Ses hatası:", err);
                         }
+
                         global.activeTokens.set(token, selfBot);
                     });
                     
@@ -145,10 +138,10 @@ module.exports = {
             }
             
             await i.editReply(await renderSesPanel(i.user.id, i.guild, i.client));
-            await i.followUp({ content: `<a:emoji110:1537925433763299418> Birlikler sese konumlandı${isStream ? ' ve Yayın/Kamera zorla aktif edildi' : ''}!`, flags: 64 });
+            await i.followUp({ content: `<a:emoji110:1537925433763299418> Birlikler sese konumlandı${isStream ? ' ve Yayın/Kamera (Kütüphane) aktif edildi' : ''}!`, flags: 64 });
         }
 
-        // ==================== SESTEN ÇIKARMA İŞLEMLERİ ====================
+        // ==================== SESTEN ÇIKARMA (SIFIR HATA) ====================
         if (id === 'tk_ses_cikar') {
             await i.deferUpdate().catch(()=>{});
             
@@ -158,17 +151,17 @@ module.exports = {
             let cikarlan = 0;
             for (const acc of userAccounts) {
                 let targetBot = global.activeTokens?.get(acc.token);
+                let targetStreamer = global.streamers?.get(acc.token);
                 
+                if (targetStreamer) {
+                    try { 
+                        targetStreamer.leaveVoice(); // Kütüphane üzerinden güvenli çıkış
+                    } catch(e){}
+                    global.streamers.delete(acc.token);
+                }
+
                 if (targetBot) {
                     try {
-                        // Tüm sunuculardaki ses bağlantısını silmek için sahte disconnect sinyali
-                        targetBot.guilds.cache.forEach(guild => {
-                            guild.shard.send({ 
-                                op: 4, 
-                                d: { guild_id: guild.id, channel_id: null, self_mute: false, self_deaf: false, self_video: false } 
-                            });
-                        });
-                        
                         targetBot.destroy();
                         global.activeTokens.delete(acc.token);
                         cikarlan++;
