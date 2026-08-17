@@ -309,7 +309,6 @@ client.on('interactionCreate', async interaction => {
     if (interaction.isButton() || interaction.isModalSubmit() || interaction.isStringSelectMenu()) {
         const id = interaction.customId;
 
-        // BÜTÜN BUTON/MODAL/MENÜ KİMLİKLERİ BURAYA TANITILDI
         if (['btn_void_giris_panel', 'modal_void_giris', 'btn_void_kayitli', 'select_void_kayitli', 'btn_giris_sec', 'btn_giris_manuel', 'btn_giris_kod_al', 'select_giris_token', 'modal_giris_manuel'].includes(id)) {
             const cmd = client.textCommands.get('giris');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
@@ -335,8 +334,8 @@ client.on('interactionCreate', async interaction => {
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
 
-        // ============ KAMERA VE YAYIN BUTON ID'LERİ BURAYA İLAVE EDİLDİ ============
-        if (['btn_ses_panel', 'tk_ses_sok_hepsi', 'tk_ses_sok_sec', 'tk_ses_yayin_hepsi', 'tk_ses_yayin_sec', 'tk_ses_cikar_hepsi', 'tk_ses_cikar_sec', 'select_ses_sok', 'select_ses_yayin', 'select_ses_cikar', 'modal_sese_sok'].includes(id)) {
+        // ================= YENİ VE SADE SES PANELİ ID'LERİ =================
+        if (['btn_ses_panel', 'tk_ses_sok_hepsi', 'tk_ses_sok_sec', 'tk_ses_cikar', 'select_ses_sok', 'modal_sese_sok'].includes(id)) {
             const cmd = client.textCommands.get('ses');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }

@@ -1,14 +1,14 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, StringSelectMenuBuilder } = require('discord.js');
 const mongoose = require('mongoose');
 const { Client: SelfbotClient, RichPresence } = require('discord.js-selfbot-v13');
-const { Streamer } = require('@dank074/discord-video-stream'); // YENİ EKLENEN PROFESYONEL PAKET
+const { joinVoiceChannel, getVoiceConnection } = require('@discordjs/voice');
 
 const Account = mongoose.models.Account || mongoose.model('Account', new mongoose.Schema({ userId: String, token: String, username: String }));
 const REQUIRED_GUILD_ID = "1537608795876884642"; 
-if (!global.activeTokens) global.activeTokens = new Map();
-if (!global.streamers) global.streamers = new Map(); // Streamer nesnelerini tutacağımız hafıza
 
-// O an seçilen tokeni ve modu hafızada tutmak için geçici harita
+if (!global.activeTokens) global.activeTokens = new Map();
+
+// O an seçilen tokenleri hafızada tutmak için
 const tempSession = new Map();
 
 async function renderSesPanel(userId, guild, client) {
@@ -16,32 +16,26 @@ async function renderSesPanel(userId, guild, client) {
     const aktifSayisi = userAccounts.filter(acc => global.activeTokens?.has(acc.token)).length;
 
     const embed = new EmbedBuilder()
-        .setTitle('<a:emoji58:1537925046486433802> Void | Profesyonel Ses & Yayın Yönetimi <a:emoji24:1537925080447717447>')
+        .setTitle('<a:emoji58:1537925046486433802> Void | Ses ve Yayın Yönetimi <a:emoji24:1537925080447717447>')
         .setColor('#2b2d31')
         .setDescription(
-            '<a:emoji109:1537925984882266212> **7/24 Ses & Durum Yönetimi**\n' +
-            'Kayıtlı tokenlerinizi belirlediğiniz sunucunun ses kanalına sokabilirsiniz.\n\n' +
+            '<a:emoji109:1537925984882266212> **7/24 Ses & Kamera Yönetimi**\n' +
+            'Kayıtlı tokenlerinizi sese sokarken Kamera ve Yayın açıp açmamayı belirleyebilirsiniz.\n\n' +
             `<a:emoji110:1537925433763299418> Seste Olan Hesaplar: **${aktifSayisi}**\n\n` +
-            '<a:emoji24:1537925080447717447> *Sese sokma ve çıkarma işlemleri için aşağıdaki butonları kullanın.*'
+            '<a:emoji24:1537925080447717447> *İşlem yapmak için butonları kullanın.*'
         );
 
+    // Temizlenmiş Sade Butonlar
     const row1 = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId('tk_ses_sok_hepsi').setLabel('Hepsini Sese Sok').setStyle(ButtonStyle.Success),
-        new ButtonBuilder().setCustomId('tk_ses_sok_sec').setLabel('Seçtiğimi Sese Sok').setStyle(ButtonStyle.Primary)
+        new ButtonBuilder().setCustomId('tk_ses_sok_hepsi').setLabel('Toplu Sese Sok').setStyle(ButtonStyle.Success),
+        new ButtonBuilder().setCustomId('tk_ses_sok_sec').setLabel('Tekli Sese Sok').setStyle(ButtonStyle.Primary)
     );
     
-    // Kamera ve Yayın (Stream) Butonları
     const row2 = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId('tk_ses_yayin_hepsi').setLabel('Kamera+Yayın Aç (Hepsi)').setStyle(ButtonStyle.Success).setEmoji('🎥'),
-        new ButtonBuilder().setCustomId('tk_ses_yayin_sec').setLabel('Kamera+Yayın Aç (Seçili)').setStyle(ButtonStyle.Primary).setEmoji('🎥')
+        new ButtonBuilder().setCustomId('tk_ses_cikar').setLabel('Çalışan Tüm Hesapları Sesten Çıkar').setStyle(ButtonStyle.Danger)
     );
 
-    const row3 = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId('tk_ses_cikar_hepsi').setLabel('Hepsini Sesten Çıkar').setStyle(ButtonStyle.Danger),
-        new ButtonBuilder().setCustomId('tk_ses_cikar_sec').setLabel('Seçtiğimi Sesten Çıkar').setStyle(ButtonStyle.Secondary)
-    );
-
-    return { embeds: [embed], components: [row1, row2, row3] };
+    return { embeds: [embed], components: [row1, row2] };
 }
 
 module.exports = {
@@ -66,34 +60,33 @@ module.exports = {
         }
 
         // ==================== SESE SOKMA İŞLEMLERİ ====================
-        if (id === 'tk_ses_sok_hepsi' || id === 'tk_ses_sok_sec' || id === 'tk_ses_yayin_hepsi' || id === 'tk_ses_yayin_sec') {
-            const isStream = id.includes('yayin');
+        if (id === 'tk_ses_sok_hepsi' || id === 'tk_ses_sok_sec') {
             const userAccounts = await Account.find({ userId: i.user.id });
             if (userAccounts.length === 0) return i.reply({ content: '<a:emoji197:1537925769068806214> Kayıtlı tokeniniz yok!', flags: 64 });
 
-            if (id === 'tk_ses_sok_sec' || id === 'tk_ses_yayin_sec') {
-                const customId = isStream ? 'select_ses_yayin' : 'select_ses_sok';
+            if (id === 'tk_ses_sok_sec') {
                 const options = userAccounts.map((acc, index) => ({ label: acc.username || `Hesap ${index + 1}`, value: acc.token }));
-                const selectMenu = new ActionRowBuilder().addComponents(new StringSelectMenuBuilder().setCustomId(customId).setPlaceholder('Sese sokulacak hesabı seçin').addOptions(options));
+                const selectMenu = new ActionRowBuilder().addComponents(new StringSelectMenuBuilder().setCustomId('select_ses_sok').setPlaceholder('Sese sokulacak hesabı seçin').addOptions(options));
                 return i.reply({ content: '<a:emoji109:1537925984882266212> Lütfen sese sokmak istediğiniz hesabı seçin:', components: [selectMenu], flags: 64 });
             }
 
-            tempSession.set(i.user.id, { tokens: userAccounts.map(a => a.token), stream: isStream });
-            const modal = new ModalBuilder().setCustomId('modal_sese_sok').setTitle('Hedef Sunucu & Kanal');
+            tempSession.set(i.user.id, { tokens: userAccounts.map(a => a.token) });
+            const modal = new ModalBuilder().setCustomId('modal_sese_sok').setTitle('Sese Sokma Ayarları');
             modal.addComponents(
                 new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('g_id').setLabel('Sunucu ID').setStyle(TextInputStyle.Short).setRequired(true)),
-                new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('c_id').setLabel('Ses Kanal ID').setStyle(TextInputStyle.Short).setRequired(true))
+                new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('c_id').setLabel('Ses Kanal ID').setStyle(TextInputStyle.Short).setRequired(true)),
+                new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('stream_opt').setLabel('Kamera & Yayın Açılsın mı?').setPlaceholder('"evet" veya "hayir" yazın').setStyle(TextInputStyle.Short).setRequired(true))
             );
             await i.showModal(modal);
         }
 
-        if (id === 'select_ses_sok' || id === 'select_ses_yayin') {
-            const isStream = id.includes('yayin');
-            tempSession.set(i.user.id, { tokens: [i.values[0]], stream: isStream }); 
-            const modal = new ModalBuilder().setCustomId('modal_sese_sok').setTitle('Hedef Sunucu & Kanal');
+        if (id === 'select_ses_sok') {
+            tempSession.set(i.user.id, { tokens: [i.values[0]] }); 
+            const modal = new ModalBuilder().setCustomId('modal_sese_sok').setTitle('Sese Sokma Ayarları');
             modal.addComponents(
                 new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('g_id').setLabel('Sunucu ID').setStyle(TextInputStyle.Short).setRequired(true)),
-                new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('c_id').setLabel('Ses Kanal ID').setStyle(TextInputStyle.Short).setRequired(true))
+                new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('c_id').setLabel('Ses Kanal ID').setStyle(TextInputStyle.Short).setRequired(true)),
+                new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('stream_opt').setLabel('Kamera & Yayın Açılsın mı?').setPlaceholder('"evet" veya "hayir" yazın').setStyle(TextInputStyle.Short).setRequired(true))
             );
             await i.showModal(modal);
         }
@@ -102,13 +95,14 @@ module.exports = {
             await i.deferUpdate().catch(()=>{});
             const hedefSunucu = i.fields.getTextInputValue('g_id');
             const hedefKanal = i.fields.getTextInputValue('c_id');
+            const streamSecim = i.fields.getTextInputValue('stream_opt').toLowerCase();
+            const isStream = streamSecim.includes('evet'); // evet yazıldıysa yayın açılır
+
             const sessionData = tempSession.get(i.user.id);
             if (!sessionData) return;
 
-            const isStream = sessionData.stream || false;
-
             for (const token of sessionData.tokens) {
-                if (global.activeTokens?.has(token)) continue; // Zaten aktifse geç
+                if (global.activeTokens?.has(token)) continue; 
                 try {
                     const selfBot = new SelfbotClient({ checkUpdate: false });
                     
@@ -116,25 +110,49 @@ module.exports = {
                         const status = new RichPresence(selfBot).setApplicationId('1491071700715048970').setType('PLAYING').setName('.gg/voido').setDetails('Project by noxy').addButton('Discord', 'https://discord.gg/voido');
                         selfBot.user.setActivity(status);
                         
-                        // YENİ PROFESYONEL YAYIN ALTYAPISI
-                        const streamer = new Streamer(selfBot);
-                        global.streamers.set(token, streamer);
-                        
-                        // Sese katıl (Streamer üzerinden bağlanıyoruz)
-                        await streamer.joinVoice(hedefSunucu, hedefKanal);
+                        const guild = selfBot.guilds.cache.get(hedefSunucu);
+                        if (guild) {
+                            // Sese normal yoldan bağlan
+                            joinVoiceChannel({ 
+                                channelId: hedefKanal, 
+                                guildId: guild.id, 
+                                adapterCreator: guild.voiceAdapterCreator, 
+                                group: selfBot.user.id, 
+                                selfDeaf: true, 
+                                selfMute: true 
+                            });
 
-                        if (isStream) {
-                            // Gerçek kamera sinyali gönder
-                            selfBot.signalVideo(hedefSunucu, hedefKanal, true);
-                            
-                            // Gerçek ekran paylaşımı (Go-Live) sinyali oluştur
-                            try {
-                                await streamer.createStream(); // Discord UDP sunucularında yayın odası açar
-                            } catch (e) {
-                                console.error("Yayın odası oluşturulurken hata (Normal olabilir):", e);
+                            // Kilit Nokta: Discord'a Ajan Sinyali Yollayarak Kamerayı ve Yayını Açtırma
+                            if (isStream) {
+                                setTimeout(() => {
+                                    // 1. Kamera Sinyali
+                                    guild.shard.send({
+                                        op: 4,
+                                        d: {
+                                            guild_id: guild.id,
+                                            channel_id: hedefKanal,
+                                            self_mute: true,
+                                            self_deaf: true,
+                                            self_video: true, // KAMERA İKONU
+                                            self_stream: true // YAYIN ROZETİ
+                                        }
+                                    });
+                                }, 2000);
+
+                                setTimeout(() => {
+                                    // 2. Yayında Sinyali (Kırmızı YAYINDA yazısı)
+                                    guild.shard.send({
+                                        op: 18,
+                                        d: {
+                                            type: "guild",
+                                            guild_id: guild.id,
+                                            channel_id: hedefKanal,
+                                            preferred_region: null
+                                        }
+                                    });
+                                }, 3000);
                             }
                         }
-
                         global.activeTokens.set(token, selfBot);
                     });
                     
@@ -145,56 +163,45 @@ module.exports = {
             }
             
             await i.editReply(await renderSesPanel(i.user.id, i.guild, i.client));
-            await i.followUp({ content: `<a:emoji110:1537925433763299418> Birlikler sese konumlandı${isStream ? ' ve kameralar aktif edildi' : ''}!`, flags: 64 });
+            await i.followUp({ content: `<a:emoji110:1537925433763299418> Birlikler sese konumlandı${isStream ? ' ve Yayın/Kamera aktif edildi' : ''}!`, flags: 64 });
         }
 
-        // ==================== SESTEN ÇIKARMA İŞLEMLERİ ====================
-        if (id === 'tk_ses_cikar_hepsi' || id === 'tk_ses_cikar_sec') {
-            const userAccounts = await Account.find({ userId: i.user.id });
-            if (userAccounts.length === 0) return i.reply({ content: '<a:emoji197:1537925769068806214> Kayıtlı tokeniniz yok!', flags: 64 });
-
-            if (id === 'tk_ses_cikar_sec') {
-                const options = userAccounts.map((acc, index) => ({ label: acc.username || `Hesap ${index + 1}`, value: acc.token }));
-                const selectMenu = new ActionRowBuilder().addComponents(new StringSelectMenuBuilder().setCustomId('select_ses_cikar').setPlaceholder('Sesten çıkarılacak hesabı seçin').addOptions(options));
-                return i.reply({ content: '<a:emoji109:1537925984882266212> Lütfen sesten çıkarmak istediğiniz hesabı seçin:', components: [selectMenu], flags: 64 });
-            }
-
+        // ==================== SESTEN ÇIKARMA (Sıfır Hata) ====================
+        if (id === 'tk_ses_cikar') {
             await i.deferUpdate().catch(()=>{});
+            
+            const userAccounts = await Account.find({ userId: i.user.id });
+            if (userAccounts.length === 0) return;
+
+            let cikarlan = 0;
             for (const acc of userAccounts) {
                 let targetBot = global.activeTokens?.get(acc.token);
-                let targetStreamer = global.streamers?.get(acc.token);
-                
-                if (targetStreamer) {
-                    try { targetStreamer.leaveVoice(); } catch(e){}
-                    global.streamers.delete(acc.token);
-                }
                 
                 if (targetBot) {
                     try {
-                        targetBot.user.setActivity(null);
-                        setTimeout(() => { try { targetBot.destroy(); } catch(e){} global.activeTokens.delete(acc.token); }, 1500);
+                        // Önce ses bağlantılarını zorla kopar
+                        targetBot.guilds.cache.forEach(guild => {
+                            const conn = getVoiceConnection(guild.id, targetBot.user.id);
+                            if (conn) conn.destroy(); // Bağlantıyı öldür
+                            
+                            // Discord sunucusuna "Sesten çıktım" sinyali yolla
+                            guild.shard.send({ op: 4, d: { guild_id: guild.id, channel_id: null, self_mute: false, self_deaf: false, self_video: false, self_stream: false } });
+                        });
+                        
+                        // Botu kapatıp hafızadan sil
+                        targetBot.destroy();
+                        global.activeTokens.delete(acc.token);
+                        cikarlan++;
                     } catch(e) {}
                 }
             }
-            await i.editReply(await renderSesPanel(i.user.id, i.guild, i.client));
-        }
 
-        if (id === 'select_ses_cikar') {
-            await i.deferUpdate().catch(()=>{});
-            const token = i.values[0];
-            let targetBot = global.activeTokens?.get(token);
-            let targetStreamer = global.streamers?.get(token);
-            
-            if (targetStreamer) {
-                try { targetStreamer.leaveVoice(); } catch(e){}
-                global.streamers.delete(token);
-            }
-            
-            if (targetBot) {
-                targetBot.user.setActivity(null);
-                setTimeout(() => { try { targetBot.destroy(); } catch(e){} global.activeTokens.delete(token); }, 1500);
-            }
             await i.editReply(await renderSesPanel(i.user.id, i.guild, i.client));
+            if (cikarlan > 0) {
+                await i.followUp({ content: `<a:emoji110:1537925433763299418> Toplam **${cikarlan}** hesap sesten çekildi ve kapatıldı!`, flags: 64 });
+            } else {
+                await i.followUp({ content: `<a:emoji197:1537925769068806214> Seste çalışan hesabın bulunamadı.`, flags: 64 });
+            }
         }
     }
 };
