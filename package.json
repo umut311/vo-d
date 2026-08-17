@@ -6,6 +6,7 @@
     "start": "node index.js"
   },
   "dependencies": {
+    "@dank074/discord-video-stream": "^6.0.0",
     "@discordjs/voice": "^0.19.2",
     "@google/generative-ai": "^0.24.1",
     "discord.js": "^14.14.1",

@@ -335,7 +335,8 @@ client.on('interactionCreate', async interaction => {
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
 
-        if (['btn_ses_panel', 'tk_ses_sok_hepsi', 'tk_ses_sok_sec', 'tk_ses_cikar_hepsi', 'tk_ses_cikar_sec', 'select_ses_sok', 'select_ses_cikar', 'modal_sese_sok'].includes(id)) {
+        // ============ KAMERA VE YAYIN BUTON ID'LERİ BURAYA İLAVE EDİLDİ ============
+        if (['btn_ses_panel', 'tk_ses_sok_hepsi', 'tk_ses_sok_sec', 'tk_ses_yayin_hepsi', 'tk_ses_yayin_sec', 'tk_ses_cikar_hepsi', 'tk_ses_cikar_sec', 'select_ses_sok', 'select_ses_yayin', 'select_ses_cikar', 'modal_sese_sok'].includes(id)) {
             const cmd = client.textCommands.get('ses');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
