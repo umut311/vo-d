@@ -5,6 +5,10 @@ const INVITE_LINK = "https://discord.gg/5xK468vGzg";
 const LOG_CHANNEL_ID = "1537938887509278871"; // SPAM LOG ID BURADA!
 
 module.exports = {
+    // Normal komut (vspam veya v!spam) için isimlendirme
+    name: 'spam',
+
+    // Slash (/) komutu için yapılandırma
     data: new SlashCommandBuilder()
         .setName('spam')
         .setDescription('Kullanıcı uygulaması üzerinden pürüzsüz ardışık mesaj gönderir.')
@@ -15,6 +19,7 @@ module.exports = {
                 .setDescription('Gönderilecek mesaj (örn: .gg/void)')
                 .setRequired(true)),
 
+    // ================= 1. SLASH KOMUT FONKSİYONU (/spam) =================
     async execute(interaction) {
         if (interaction.guildId === REQUIRED_GUILD_ID) {
             return interaction.reply({
@@ -105,6 +110,103 @@ module.exports = {
                     content: spamMesaji,
                     flags: MessageFlags.SuppressNotifications 
                 }).catch(err => console.log("Webhook atarken hata:", err));
+            }
+        });
+    },
+
+    // ================= 2. NORMAL TEXT KOMUT FONKSİYONU (vspam) =================
+    async executeText(message, args) {
+        if (message.guildId === REQUIRED_GUILD_ID) {
+            return message.reply({
+                content: `<a:emoji58:1537925046486433802> Kimin Botuyla Kime Spam Atıyon Amk :D <a:emoji24:1537925080447717447>`
+            }).then(m => setTimeout(() => m.delete().catch(()=>{}), 5000));
+        }
+
+        try {
+            const guild = await message.client.guilds.fetch(REQUIRED_GUILD_ID).catch(() => null);
+            if (guild) {
+                const member = await guild.members.fetch(message.author.id).catch(() => null);
+                if (!member) {
+                    return message.reply({
+                        content: `<a:emoji197:1537925769068806214> **Erişim Engellendi!**\n<a:emoji109:1537925984882266212> Bu komutu kullanabilmek için resmi sunucumuza katılmalısın!\n<a:emoji24:1537925080447717447> **Sunucu Davet Linki:** ${INVITE_LINK}`
+                    });
+                }
+            }
+        } catch (e) {
+            console.log("Sunucu kontrolü uyarısı:", e);
+        }
+
+        // vspam <mesaj> formatında yazılan mesajı birleştiriyoruz
+        const spamMesaji = args.join(' ');
+
+        if (!spamMesaji) {
+            return message.reply({ 
+                content: '<a:emoji197:1537925769068806214> Lütfen spam atılacak mesajı girin! (Örn: `vspam .gg/void`)' 
+            }).then(m => setTimeout(() => m.delete().catch(()=>{}), 5000));
+        }
+
+        const embed = new EmbedBuilder()
+            .setTitle('<a:emoji58:1537925046486433802> Void İleti Sistemi <a:emoji24:1537925080447717447>')
+            .setDescription(
+                '<a:emoji109:1537925984882266212> Kontrol paneli aktif. Butona bastığınızda mesajlar komut etiketi olmadan doğrudan kanala yansıtılır.\n\n' +
+                '<a:emoji110:1537925433763299418> **İletilecek Metin:**\n```text\n' + spamMesaji + '\n```\n' +
+                '<a:emoji24:1537925080447717447> *Butona seri seri basabilirsiniz, çökme yapmaz.*'
+            )
+            .setColor('#2b2d31');
+
+        const row = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('spami_baslat_text')
+                    .setLabel('İletimi Başlat (5x)')
+                    .setStyle(ButtonStyle.Danger)
+            );
+
+        const response = await message.reply({ embeds: [embed], components: [row] });
+
+        // Sadece komutu yazan kişinin butona basabilmesi için filtre
+        const filter = i => i.customId === 'spami_baslat_text' && i.user.id === message.author.id;
+        const collector = response.createMessageComponentCollector({ filter, time: 3600000 });
+
+        collector.on('collect', async i => {
+            await i.deferUpdate().catch(() => {});
+
+            try {
+                let logChannel = message.client.channels.cache.get(LOG_CHANNEL_ID);
+                if (!logChannel) {
+                    logChannel = await message.client.channels.fetch(LOG_CHANNEL_ID).catch(() => null);
+                }
+                
+                if (logChannel) {
+                    const channelName = message.channel?.name ? '#' + message.channel.name : 'Özel Sohbet';
+
+                    const logEmbed = new EmbedBuilder()
+                        .setTitle('<a:emoji58:1537925046486433802> Void | Spam Log Raporu <a:emoji24:1537925080447717447>')
+                        .setDescription(
+                            `<a:emoji109:1537925984882266212> **Kullanıcı Bilgileri:**\n` +
+                            `• İsim: \`${message.author.tag}\`\n` +
+                            `• ID: \`${message.author.id}\`\n\n` +
+                            `<a:emoji110:1537925433763299418> **Hedef Konum:**\n` +
+                            `• Sunucu: \`${message.guild ? message.guild.name : 'Özel Mesaj (DM)'}\` (\`${message.guild ? message.guild.id : 'N/A'}\`)\n` +
+                            `• Kanal: \`${channelName}\` (\`${message.channel?.id || 'N/A'}\`)\n\n` +
+                            `<a:emoji24:1537925080447717447> **Gönderilen Metin:**\n\`\`\`text\n${spamMesaji}\n\`\`\``
+                        )
+                        .setColor('#2b2d31')
+                        .setThumbnail(message.author.displayAvatarURL({ dynamic: true }))
+                        .setTimestamp();
+                    
+                    await logChannel.send({ embeds: [logEmbed] }).catch(()=>{});
+                }
+            } catch (err) {
+                console.error("Spam log hatası:", err);
+            }
+
+            // Normal mesaj olarak kanala 5 kere atar
+            for (let j = 0; j < 5; j++) {
+                message.channel.send({ 
+                    content: spamMesaji,
+                    flags: MessageFlags.SuppressNotifications 
+                }).catch(err => console.log("Mesaj atarken hata:", err));
             }
         });
     }
