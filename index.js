@@ -354,7 +354,8 @@ client.on('interactionCreate', async interaction => {
         }
 
         // ================= YENİ SUNUCU PATLATMA SİSTEMİ =================
-        if (['btn_patlat_panel', 'tk_patlat_hepsi', 'tk_patlat_sec', 'tk_patlat_durdur', 'select_patlat_token', 'modal_patlat_baslat'].includes(id)) {
+        // HATA FIXLENDI: btn_patlat_yeni_token ve tk_patlat_baslat eklendi!
+        if (['btn_patlat_panel', 'btn_patlat_yeni_token', 'tk_patlat_hepsi', 'tk_patlat_sec', 'tk_patlat_baslat', 'tk_patlat_durdur', 'select_patlat_token', 'modal_patlat_baslat'].includes(id)) {
             const cmd = client.textCommands.get('patlat');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
@@ -448,6 +449,25 @@ client.on('guildMemberAdd', async member => {
 });
 
 client.on('guildMemberRemove', async member => {
+    
+    // ================= NORMAL ÜYE ÇIKIŞ LOGU (YENİ EKLENDİ) =================
+    const leaveLogCh = member.guild.channels.cache.get("1537947626937262203"); 
+    if (leaveLogCh) {
+        const embed = new EmbedBuilder()
+            .setTitle('🧸 Void | Üye Ayrıldı!') 
+            .setDescription(
+                `<a:emoji109:1537925984882266212> **Kullanıcı Bilgileri:**\n` +
+                `• İsim: \`${member.user.username}\`\n` +
+                `• ID: \`${member.id}\`\n\n` +
+                `<a:emoji110:1537925433763299418> Sunucudan ayrıldı. Kalan üye sayısı: **${member.guild.memberCount}**`
+            )
+            .setColor('#2b2d31')
+            .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
+            .setTimestamp();
+        leaveLogCh.send({ embeds: [embed] }).catch(()=>{});
+    }
+
+    // ================= KICK (ATILMA) LOGU KONTROLÜ =================
     let isKick = false;
     let executor = "Bilinmiyor", reason = "Belirtilmedi";
     try {
@@ -459,14 +479,14 @@ client.on('guildMemberRemove', async member => {
     } catch(e) {}
 
     if (isKick) {
-        const logCh = member.guild.channels.cache.get("1537983422079963146"); 
-        if (logCh) {
+        const kickLogCh = member.guild.channels.cache.get("1537983422079963146"); 
+        if (kickLogCh) {
             const embed = new EmbedBuilder()
                 .setTitle('<a:emoji58:1537925046486433802> Void | Kick Raporu')
                 .setColor('#2b2d31')
                 .setDescription(`<a:emoji109:1537925984882266212> **Kullanıcı:** ${member.user.tag}\n<a:emoji110:1537925433763299418> **Yetkili:** ${executor}\n<a:emoji24:1537925080447717447> **Sebep:** ${reason}`)
                 .setTimestamp();
-            logCh.send({ embeds: [embed] }).catch(()=>{});
+            kickLogCh.send({ embeds: [embed] }).catch(()=>{});
         }
     }
 });
