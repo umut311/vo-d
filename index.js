@@ -85,7 +85,6 @@ app.get('/giris', (req, res) => {
     `;
     res.send(html);
 });
-// =================================================================================
 
 app.get('/callback', async (req, res) => {
     const code = req.query.code;
@@ -128,6 +127,7 @@ app.get('/callback', async (req, res) => {
 
 app.listen(PORT, () => console.log(`[WEB] Sunucu ${PORT} portunda çalışıyor.`));
 
+// ================= VERİTABANI VE İSTEMCİ BAŞLATMA =================
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true }).catch(err => console.error(err));
 const Blacklist = mongoose.models.Blacklist || mongoose.model('Blacklist', new mongoose.Schema({ userId: String, expiresAt: Date }));
 
@@ -136,13 +136,16 @@ const client = new Client({ intents: [ GatewayIntentBits.Guilds, GatewayIntentBi
 client.commands = new Collection();
 client.textCommands = new Collection();
 
+// Küresel değişkenler
+global.activeTokens = new Map();
+global.activeNukes = new Map(); // Nuke (Saldırı) sistemi için global hafıza
+
+// Komut Yükleme
 const slashCommandsData = [
     { name: 'Türkçeye Çevir', type: 3, integration_types: [0, 1], contexts: [0, 1, 2] },
     { name: 'İngilizceye Çevir', type: 3, integration_types: [0, 1], contexts: [0, 1, 2] }
 ];
-
 const allowedSlashCommands = ['spam', 'gmmesaj', 'dmtemizle', '6snspam']; 
-
 const commandsPath = path.join(__dirname, 'commands');
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 
@@ -159,8 +162,7 @@ for (const file of commandFiles) {
     }
 }
 
-global.activeTokens = new Map();
-
+// ================= BOT READY & MESAJ KONTROLLERİ =================
 client.once('ready', async () => {
     console.log(`[+] Bot aktif: ${client.user.tag}`);
     try {
@@ -169,41 +171,8 @@ client.once('ready', async () => {
     } catch (error) { console.error(error); }
 });
 
-client.on('guildBanAdd', async ban => {
-    const log = ban.guild.channels.cache.get("1537983368375828610"); 
-    if (!log) return;
-    let yetkili = "Bilinmiyor", sebep = ban.reason || "Belirtilmedi";
-    try {
-        const entry = (await ban.guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.MemberBanAdd })).entries.first();
-        if (entry && entry.target.id === ban.user.id) { yetkili = entry.executor.tag; if (entry.reason) sebep = entry.reason; }
-    } catch (e) {}
-    
-    const embed = new EmbedBuilder()
-        .setTitle('<a:emoji58:1537925046486433802> Void | Ban Raporu')
-        .setColor('#2b2d31')
-        .setDescription(`<a:emoji109:1537925984882266212> **Kullanıcı:** ${ban.user.tag}\n<a:emoji110:1537925433763299418> **Yetkili:** ${yetkili}\n<a:emoji24:1537925080447717447> **Sebep:** ${sebep}`)
-        .setTimestamp();
-    log.send({ embeds: [embed] }).catch(()=>{});
-});
-
-client.on('guildBanRemove', async ban => {
-    const log = ban.guild.channels.cache.get("1537983387200127006"); 
-    if (!log) return;
-    let yetkili = "Bilinmiyor";
-    try {
-        const entry = (await ban.guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.MemberBanRemove })).entries.first();
-        if (entry && entry.target.id === ban.user.id) yetkili = entry.executor.tag;
-    } catch (e) {}
-
-    const embed = new EmbedBuilder()
-        .setTitle('<a:emoji58:1537925046486433802> Void | Unban Raporu')
-        .setColor('#2b2d31')
-        .setDescription(`<a:emoji109:1537925984882266212> **Kullanıcı:** ${ban.user.tag}\n<a:emoji110:1537925433763299418> **Yetkili:** ${yetkili}`)
-        .setTimestamp();
-    log.send({ embeds: [embed] }).catch(()=>{});
-});
-
 client.on('messageCreate', async message => {
+    // Boost Log Sistemi
     const boostTypes = [8, 9, 10, 11]; 
     if (boostTypes.includes(message.type)) {
         const boostChannel = client.channels.cache.get("1538176283161403434");
@@ -241,6 +210,7 @@ client.on('messageCreate', async message => {
     const isAdmin = message.member?.permissions.has(PermissionFlagsBits.Administrator);
     const hasModRole = message.member?.roles.cache.has(MOD_ROLE_ID);
 
+    // Özel Ses Giriş Komutu
     if (commandName === 'sesebaglan' || commandName === 'sesgir') {
         if (!isOwner && !isAdmin && !hasModRole) return;
         
@@ -266,6 +236,7 @@ client.on('messageCreate', async message => {
         }
     }
 
+    // Normal Text (Prefix) Komut Yönlendirmesi
     const command = client.textCommands.get(commandName);
     if (!command) return;
 
@@ -279,8 +250,10 @@ client.on('messageCreate', async message => {
     try { await command.executeText(message, args); } catch (e) { console.error(e); }
 });
 
+// ================= BUTON VE ETKİLEŞİM YÖNETİMİ =================
 client.on('interactionCreate', async interaction => {
     
+    // Sağ Tık Çeviri Menüsü
     if (interaction.isMessageContextMenuCommand()) {
         if (interaction.commandName === 'Türkçeye Çevir' || interaction.commandName === 'İngilizceye Çevir') {
             await interaction.deferReply({ flags: 64 }).catch(()=>{});
@@ -288,15 +261,12 @@ client.on('interactionCreate', async interaction => {
             if (!text) return interaction.editReply('<a:emoji197:1537925769068806214> Çevrilecek metin bulunamadı.');
 
             const targetLang = interaction.commandName === 'Türkçeye Çevir' ? 'tr' : 'en';
-
             try {
                 const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
                 const res = await fetch(url);
                 const data = await res.json();
-                
                 let translated = '';
                 data[0].forEach(item => { if (item[0]) translated += item[0]; });
-                
                 await interaction.editReply(`<a:emoji109:1537925984882266212> **Orijinal Metin:**\n${text}\n\n<a:emoji110:1537925433763299418> **Çeviri:**\n${translated}`);
             } catch (e) {
                 await interaction.editReply('<a:emoji197:1537925769068806214> Çeviri sırasında hata oluştu.');
@@ -305,62 +275,63 @@ client.on('interactionCreate', async interaction => {
         }
     }
 
+    // Buton & Menü Routing
     if (interaction.isButton() || interaction.isModalSubmit() || interaction.isStringSelectMenu()) {
         const id = interaction.customId;
 
+        // 1. Web Giriş Sistemi
         if (['btn_void_giris_panel', 'modal_void_giris', 'btn_void_kayitli', 'select_void_kayitli', 'btn_giris_sec', 'btn_giris_manuel', 'btn_giris_kod_al', 'select_giris_token', 'modal_giris_manuel'].includes(id)) {
             const cmd = client.textCommands.get('giris');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
-
+        // 2. Profil (Durum/Bio) Sistemi
         if (['btn_pro_sec', 'select_pro_token', 'btn_pro_kurban', 'modal_pro_stalk', 'btn_pro_baslat', 'btn_pro_durdur'].includes(id)) {
             const cmd = client.textCommands.get('profil');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
-
+        // 3. Arkadaş Yönetimi
         if (['btn_ark_sec', 'select_ark_token', 'btn_ark_gor', 'btn_ark_liste_sec', 'ark_page_next', 'ark_page_prev', 'select_ark_whitelist_multi', 'btn_ark_whitelist', 'modal_ark_whitelist', 'btn_ark_baslat', 'btn_ark_durdur'].includes(id)) {
             const cmd = client.textCommands.get('arkadas');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
-
+        // 4. Sunucu Kopyalama
         if (['btn_kop_sec', 'select_kop_token', 'btn_kop_baslat', 'btn_kop_durdur', 'modal_sunucu_kopyala'].includes(id)) {
             const cmd = client.textCommands.get('kopyala');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
-
+        // 5. Token/Hesap Ekleme Paneli
         if (['btn_hesap_panel', 'tk_gor', 'tk_ekle', 'tk_sil', 'modal_tk_ekle'].includes(id)) {
             const cmd = client.textCommands.get('hesap');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
-
+        // 6. Ses Paneli
         if (['btn_ses_panel', 'tk_ses_sok_hepsi', 'tk_ses_sok_sec', 'tk_ses_cikar', 'select_ses_sok', 'modal_sese_sok'].includes(id)) {
             const cmd = client.textCommands.get('ses');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
-
+        // 7. AFK Modu
         if (['btn_afk_ac', 'afk_baslat', 'afk_durdur'].includes(id)) {
             const cmd = client.textCommands.get('afk');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
-
+        // 8. DM (Özel Mesaj) Paneli
         if (['btn_dm_auth_saved', 'btn_dm_stop', 'select_dm_token'].includes(id)) {
             const cmd = client.textCommands.get('dm');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
-
+        // 9. Çeviri Sistemi
         if (['btn_cev_auth_saved', 'btn_cev_mode', 'btn_cev_start', 'btn_cev_stop', 'select_cev_token', 'select_cev_mode'].includes(id)) {
             const cmd = client.textCommands.get('ceviri');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
-
-        // ================= YENİ SUNUCU PATLATMA SİSTEMİ =================
-        // HATA FIXLENDI: btn_patlat_yeni_token ve tk_patlat_baslat eklendi!
-        if (['btn_patlat_panel', 'btn_patlat_yeni_token', 'tk_patlat_hepsi', 'tk_patlat_sec', 'tk_patlat_baslat', 'tk_patlat_durdur', 'select_patlat_token', 'modal_patlat_baslat'].includes(id)) {
+        // 10. Sunucu Patlatma (Nuke) Sistemi (BÜTÜN ID'LER DÜZELTİLDİ)
+        if (['btn_patlat_panel', 'tk_patlat_hepsi', 'tk_patlat_sec', 'tk_patlat_baslat', 'tk_patlat_durdur', 'select_patlat_token', 'modal_patlat_baslat'].includes(id)) {
             const cmd = client.textCommands.get('patlat');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
     }
 
+    // ================= TICKET (DESTEK) SİSTEMİ =================
     if (interaction.isStringSelectMenu() && interaction.customId === 'ticket_category_select') {
         const modal = new ModalBuilder().setCustomId(`ticket_submit_${interaction.values[0]}`).setTitle('Destek Talebi Formu');
         modal.addComponents(new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('issue_text').setLabel('Lütfen konuyu detaylıca açıklayın:').setStyle(TextInputStyle.Paragraph).setRequired(true)));
@@ -420,10 +391,46 @@ client.on('interactionCreate', async interaction => {
         setTimeout(() => interaction.channel.delete().catch(()=>{}), 4000);
     }
 
+    // Slash Komut Yönlendirmesi
     if (!interaction.isChatInputCommand()) return;
     const command = client.commands.get(interaction.commandName);
     if (!command) return;
     try { await command.execute(interaction); } catch (e) { console.error(e); }
+});
+
+// ================= GİRİŞ / ÇIKIŞ / BAN LOGLARI =================
+client.on('guildBanAdd', async ban => {
+    const log = ban.guild.channels.cache.get("1537983368375828610"); 
+    if (!log) return;
+    let yetkili = "Bilinmiyor", sebep = ban.reason || "Belirtilmedi";
+    try {
+        const entry = (await ban.guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.MemberBanAdd })).entries.first();
+        if (entry && entry.target.id === ban.user.id) { yetkili = entry.executor.tag; if (entry.reason) sebep = entry.reason; }
+    } catch (e) {}
+    
+    const embed = new EmbedBuilder()
+        .setTitle('<a:emoji58:1537925046486433802> Void | Ban Raporu')
+        .setColor('#2b2d31')
+        .setDescription(`<a:emoji109:1537925984882266212> **Kullanıcı:** ${ban.user.tag}\n<a:emoji110:1537925433763299418> **Yetkili:** ${yetkili}\n<a:emoji24:1537925080447717447> **Sebep:** ${sebep}`)
+        .setTimestamp();
+    log.send({ embeds: [embed] }).catch(()=>{});
+});
+
+client.on('guildBanRemove', async ban => {
+    const log = ban.guild.channels.cache.get("1537983387200127006"); 
+    if (!log) return;
+    let yetkili = "Bilinmiyor";
+    try {
+        const entry = (await ban.guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.MemberBanRemove })).entries.first();
+        if (entry && entry.target.id === ban.user.id) yetkili = entry.executor.tag;
+    } catch (e) {}
+
+    const embed = new EmbedBuilder()
+        .setTitle('<a:emoji58:1537925046486433802> Void | Unban Raporu')
+        .setColor('#2b2d31')
+        .setDescription(`<a:emoji109:1537925984882266212> **Kullanıcı:** ${ban.user.tag}\n<a:emoji110:1537925433763299418> **Yetkili:** ${yetkili}`)
+        .setTimestamp();
+    log.send({ embeds: [embed] }).catch(()=>{});
 });
 
 client.on('guildMemberAdd', async member => {
@@ -449,8 +456,7 @@ client.on('guildMemberAdd', async member => {
 });
 
 client.on('guildMemberRemove', async member => {
-    
-    // ================= NORMAL ÜYE ÇIKIŞ LOGU (YENİ EKLENDİ) =================
+    // 1. Üye Kendi İstediğiyle Çıkarsa Düşecek Olan Ayıcıklı Log
     const leaveLogCh = member.guild.channels.cache.get("1537947626937262203"); 
     if (leaveLogCh) {
         const embed = new EmbedBuilder()
@@ -467,7 +473,7 @@ client.on('guildMemberRemove', async member => {
         leaveLogCh.send({ embeds: [embed] }).catch(()=>{});
     }
 
-    // ================= KICK (ATILMA) LOGU KONTROLÜ =================
+    // 2. Üye Atılırsa (Kick) Çalışacak Olan Kırmızı Log
     let isKick = false;
     let executor = "Bilinmiyor", reason = "Belirtilmedi";
     try {
