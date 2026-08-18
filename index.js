@@ -23,7 +23,8 @@ const mongoose = require('mongoose');
 const { joinVoiceChannel } = require('@discordjs/voice');
 require('dotenv').config();
 
-const MY_CLIENT_ID = "1491071700715048970"; 
+// YENİ BOTUNUN ID'Sİ EKLENDİ
+const MY_CLIENT_ID = "1539404218023149598"; 
 const MY_CLIENT_SECRET = process.env.CLIENT_SECRET || "_I2W0duhYviJuoJqMBy6MT3VLrWE4aur"; 
 const MY_REDIRECT_URI = "https://void-project-d59p.onrender.com/callback";
 const MOD_ROLE_ID = "1537938887509278871"; 
@@ -324,7 +325,7 @@ client.on('interactionCreate', async interaction => {
             const cmd = client.textCommands.get('ceviri');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
-        // 10. Sunucu Patlatma (Nuke) Sistemi (BÜTÜN ID'LER DÜZELTİLDİ)
+        // 10. Sunucu Patlatma (Nuke) Sistemi
         if (['btn_patlat_panel', 'tk_patlat_hepsi', 'tk_patlat_sec', 'tk_patlat_baslat', 'tk_patlat_durdur', 'select_patlat_token', 'modal_patlat_baslat'].includes(id)) {
             const cmd = client.textCommands.get('patlat');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
