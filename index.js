@@ -141,7 +141,6 @@ const slashCommandsData = [
     { name: 'İngilizceye Çevir', type: 3, integration_types: [0, 1], contexts: [0, 1, 2] }
 ];
 
-// 6SNSPAM KOMUTU BURAYA EKLENDİ (API'YE KAYIT İÇİN)
 const allowedSlashCommands = ['spam', 'gmmesaj', 'dmtemizle', '6snspam']; 
 
 const commandsPath = path.join(__dirname, 'commands');
@@ -334,7 +333,6 @@ client.on('interactionCreate', async interaction => {
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
 
-        // ================= YENİ VE SADE SES PANELİ ID'LERİ =================
         if (['btn_ses_panel', 'tk_ses_sok_hepsi', 'tk_ses_sok_sec', 'tk_ses_cikar', 'select_ses_sok', 'modal_sese_sok'].includes(id)) {
             const cmd = client.textCommands.get('ses');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
@@ -352,6 +350,12 @@ client.on('interactionCreate', async interaction => {
 
         if (['btn_cev_auth_saved', 'btn_cev_mode', 'btn_cev_start', 'btn_cev_stop', 'select_cev_token', 'select_cev_mode'].includes(id)) {
             const cmd = client.textCommands.get('ceviri');
+            if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
+        }
+
+        // ================= YENİ SUNUCU PATLATMA SİSTEMİ =================
+        if (['btn_patlat_panel', 'tk_patlat_hepsi', 'tk_patlat_sec', 'tk_patlat_durdur', 'select_patlat_token', 'modal_patlat_baslat'].includes(id)) {
+            const cmd = client.textCommands.get('patlat');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
     }
