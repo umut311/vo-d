@@ -474,7 +474,7 @@ client.on('guildMemberRemove', async member => {
         leaveLogCh.send({ embeds: [embed] }).catch(()=>{});
     }
 
-    // 2. Üye Atılırsa (Kick) Çalışacak Olan Kırmızı Log
+    // 2. Üye Atılırsa (Kick) Çalışacak Olan Kırmızı Lo
     let isKick = false;
     let executor = "Bilinmiyor", reason = "Belirtilmedi";
     try {
