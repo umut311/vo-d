@@ -9,10 +9,10 @@ async function handleAFKPanel(interaction) {
     const userAccounts = await Account.find({ userId: interaction.user.id });
     
     const embed = new EmbedBuilder()
-        .setTitle('<:emoji185:1539424050881761440> Void | AFK Yönetim Merkezi <:emoji141:1539424556412829817>')
+        .setTitle('<a:emoji185:1539424050881761440> Void | AFK Yönetim Merkezi <a:emoji195:1539424442768424992>')
         .setColor('#2b2d31')
         .setThumbnail(interaction.guild?.iconURL({ dynamic: true }) || interaction.client.user.displayAvatarURL({ dynamic: true }))
-        .setDescription(`Kayıtlı hesap sayınız: **${userAccounts.length}**\n\n*Aşağıdaki buton ile tüm hesaplarınızı AFK (Oynuyor) moduna alabilirsiniz.*`);
+        .setDescription(`<a:emoji105:1539424496346206298> Kayıtlı hesap sayınız: **${userAccounts.length}**\n\n<a:emoji105:1539424496346206298> *Aşağıdaki buton ile tüm hesaplarınızı AFK (Oynuyor) moduna alabilirsiniz.*`);
 
     const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId('afk_baslat').setLabel('Tümünü AFK Bırak (Oynuyor)').setStyle(ButtonStyle.Success),
@@ -36,12 +36,12 @@ async function handleAFKPanel(interaction) {
                 });
                 bot.login(acc.token).catch(()=>{});
             }
-            await interaction.followUp({ content: 'Tüm hesaplar AFK (Oynuyor) moduna alındı.', flags: 64 });
+            await interaction.followUp({ content: '<a:emoji133:1539424360543293521> Tüm hesaplar AFK (Oynuyor) moduna alındı.', flags: 64 });
         } 
         
         else if (i.customId === 'afk_durdur') {
             await i.deferUpdate().catch(()=>{});
-            await interaction.followUp({ content: 'AFK modundan çıkılıyor ve yazılar temizleniyor... Lütfen bekleyin.', flags: 64 });
+            await interaction.followUp({ content: '<a:emoji235:1539424382332444732> AFK modundan çıkılıyor ve yazılar temizleniyor... Lütfen bekleyin.', flags: 64 });
 
             for (const acc of userAccounts) {
                 let targetBot = global.activeTokens?.get(acc.token);
@@ -81,8 +81,8 @@ module.exports = {
     async execute(interaction) { await handleAFKPanel(interaction); },
     async executeText(message) {
         const embed = new EmbedBuilder()
-            .setTitle('<:emoji185:1539424050881761440> Void | AFK Sistemi <:emoji141:1539424556412829817>')
-            .setDescription('Kayıtlı hesaplarınızı 7/24 çevrimiçi tutmak ve durumunda sunucu reklamı sergilemek için tıklayın.')
+            .setTitle('<a:emoji185:1539424050881761440> Void | AFK Sistemi <a:emoji195:1539424442768424992>')
+            .setDescription('<a:emoji105:1539424496346206298> Kayıtlı hesaplarınızı 7/24 çevrimiçi tutmak ve durumunda sunucu reklamı sergilemek için tıklayın.')
             .setColor('#2b2d31')
             .setThumbnail(message.guild?.iconURL({ dynamic: true }) || message.client.user.displayAvatarURL({ dynamic: true }));
         const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('btn_afk_ac').setLabel('AFK Panelini Aç').setStyle(ButtonStyle.Secondary));

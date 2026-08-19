@@ -23,7 +23,7 @@ module.exports = {
         await interaction.deferReply({ flags: 64 }).catch(() => {});
 
         if (interaction.guildId) {
-            return interaction.editReply({ content: '<:emoji235:1539424382332444732> Bu komut sadece **Özel Mesajlarda (DM)** kullanılabilir!' });
+            return interaction.editReply({ content: '<a:emoji235:1539424382332444732> Bu komut sadece **Özel Mesajlarda (DM)** kullanılabilir!' });
         }
 
         try {
@@ -31,13 +31,13 @@ module.exports = {
             if (guild) {
                 const member = await guild.members.fetch(interaction.user.id).catch(() => null);
                 if (!member) {
-                    return interaction.editReply({ content: `<:emoji6:1539424274983555112> **Erişim Engellendi:** Bu özelliği kullanmak için resmi sunucumuzda olmalısın!\nKatılmak için: ${INVITE_LINK}` });
+                    return interaction.editReply({ content: `<a:emoji6:1539424274983555112> **Erişim Engellendi:** Bu özelliği kullanmak için resmi sunucumuzda olmalısın!\nKatılmak için: ${INVITE_LINK}` });
                 }
             }
         } catch (e) {}
 
         if (global.activeDmClears.has(interaction.user.id)) {
-            return interaction.editReply({ content: '<:emoji235:1539424382332444732> Zaten şu anda devam eden bir mesaj temizleme işleminiz var! Durdurmak isterseniz sunucudaki paneli kullanın.' });
+            return interaction.editReply({ content: '<a:emoji235:1539424382332444732> Zaten şu anda devam eden bir mesaj temizleme işleminiz var! Durdurmak isterseniz sunucudaki paneli kullanın.' });
         }
 
         const config = await UserConfig.findOne({ userId: interaction.user.id });
@@ -51,7 +51,7 @@ module.exports = {
         }
 
         if (!tokenToUse) {
-            return interaction.editReply({ content: '<:emoji235:1539424382332444732> Önce sunucudaki **v!dm** panelinden Token girmeli veya Kayıtlılardan seçmelisin.' });
+            return interaction.editReply({ content: '<a:emoji235:1539424382332444732> Önce sunucudaki **v!dm** panelinden Token girmeli veya Kayıtlılardan seçmelisin.' });
         }
 
         const selfBot = new SelfbotClient({ checkUpdate: false });
@@ -62,10 +62,10 @@ module.exports = {
                 
                 if (!channel) {
                     selfBot.destroy();
-                    return interaction.editReply({ content: '<:emoji235:1539424382332444732> Kanal bulunamadı. Lütfen doğru DM kutusunda olduğundan emin ol.' });
+                    return interaction.editReply({ content: '<a:emoji235:1539424382332444732> Kanal bulunamadı. Lütfen doğru DM kutusunda olduğundan emin ol.' });
                 }
 
-                await interaction.editReply({ content: '<:emoji133:1539424360543293521> Hedef kilitlendi! Tüm mesaj geçmişin taranıyor ve **TURBO** hızda siliniyor... (Durdurmak için sunucudaki paneli kullanabilirsin)' });
+                await interaction.editReply({ content: '<a:emoji133:1539424360543293521> Hedef kilitlendi! Tüm mesaj geçmişin taranıyor ve **TURBO** hızda siliniyor... (Durdurmak için sunucudaki paneli kullanabilirsin)' });
 
                 global.activeDmClears.set(interaction.user.id, { stop: false });
 
@@ -107,8 +107,8 @@ module.exports = {
                 global.activeDmClears.delete(interaction.user.id);
                 
                 const bitisMesaji = isStopped 
-                    ? `<:emoji235:1539424382332444732> İşlem panelden durduruldu! O ana kadar **${deletedCount}** mesaj başarıyla silindi.` 
-                    : `<:emoji144:1539424259552579604> Şov tamamlandı! Sana ait olan tam **${deletedCount}** mesaj başarıyla tarihe gömüldü.`;
+                    ? `<a:emoji235:1539424382332444732> İşlem panelden durduruldu! O ana kadar **${deletedCount}** mesaj başarıyla silindi.` 
+                    : `<a:emoji133:1539424360543293521> Şov tamamlandı! Sana ait olan tam **${deletedCount}** mesaj başarıyla tarihe gömüldü.`;
 
                 await interaction.editReply({ content: bitisMesaji }).catch(()=>{});
 
@@ -119,7 +119,7 @@ module.exports = {
                         
                         if (logChannel) {
                             const logEmbed = new EmbedBuilder()
-                                .setTitle(isStopped ? '<:emoji235:1539424382332444732> DM Temizliği Durduruldu' : '<:emoji133:1539424360543293521> Void | Yeni DM Temizliği')
+                                .setTitle(isStopped ? '<a:emoji235:1539424382332444732> DM Temizliği Durduruldu' : '<a:emoji133:1539424360543293521> Void | Yeni DM Temizliği')
                                 .setColor(isStopped ? '#ff0000' : '#2b2d31')
                                 .addFields(
                                     { name: 'Kullanıcı', value: `${interaction.user} (\`${interaction.user.id}\`)`, inline: true },
@@ -137,12 +137,12 @@ module.exports = {
             } catch (e) {
                 selfBot.destroy();
                 global.activeDmClears.delete(interaction.user.id);
-                await interaction.editReply({ content: '<:emoji235:1539424382332444732> Mesajları silerken beklenmedik bir hata oluştu.' }).catch(()=>{});
+                await interaction.editReply({ content: '<a:emoji235:1539424382332444732> Mesajları silerken beklenmedik bir hata oluştu.' }).catch(()=>{});
             }
         });
 
         selfBot.login(tokenToUse).catch(() => {
-            interaction.editReply({ content: '<:emoji235:1539424382332444732> Token geçersiz veya hesap kilitlenmiş. Lütfen paneli kullanarak tokenini güncelle.' });
+            interaction.editReply({ content: '<a:emoji235:1539424382332444732> Token geçersiz veya hesap kilitlenmiş. Lütfen paneli kullanarak tokenini güncelle.' });
         });
     },
 
@@ -150,15 +150,15 @@ module.exports = {
         const serverIcon = message.guild?.iconURL({ dynamic: true }) || message.client.user.displayAvatarURL({ dynamic: true });
 
         const embed = new EmbedBuilder()
-            .setTitle('<:emoji133:1539424360543293521> Void | Özel Mesaj (DM) Temizleyici <:emoji141:1539424556412829817>')
+            .setTitle('<a:emoji133:1539424360543293521> Void | Özel Mesaj (DM) Temizleyici <a:emoji195:1539424442768424992>')
             .setDescription(
-                '<:emoji105:1539424496346206298> **DM Temizleme Sistemi Nedir?**\n' +
+                '<a:emoji105:1539424496346206298> **DM Temizleme Sistemi Nedir?**\n' +
                 'Özel sohbetlerinizdeki (DM) kendi gönderdiğiniz mesajları **tek bir tuşla** tamamen silebilirsiniz!\n\n' +
-                '<:emoji144:1539424259552579604> **Nasıl Kullanılır?**\n' +
+                '<a:emoji105:1539424496346206298> **Nasıl Kullanılır?**\n' +
                 '**1.** Uygulamamızı profilinize kurmak için aşağıdaki link butonuna basın.\n' +
                 '**2.** Sistemin mesajlarınızı silebilmesi için Kayıtlı hesabı seçin.\n' +
                 '**3.** Mesajları silmek istediğiniz DM kutusuna girip `/dmtemizle` yazın.\n\n' +
-                '<:emoji141:1539424556412829817> *Not: Bu sistem yalnızca .gg/voido üyelerine özeldir.*'
+                '<a:emoji195:1539424442768424992> *Not: Bu sistem yalnızca .gg/voido üyelerine özeldir.*'
             )
             .setColor('#2b2d31')
             .setThumbnail(serverIcon)
@@ -199,7 +199,7 @@ module.exports = {
                 if (guild) {
                     const member = await guild.members.fetch(i.user.id).catch(() => null);
                     if (!member) {
-                        return i.reply({ content: `<:emoji6:1539424274983555112> **Erişim Engellendi:** Bunu kullanabilmek için .gg/voido sunucusunda olmalısın!`, flags: 64 });
+                        return i.reply({ content: `<a:emoji6:1539424274983555112> **Erişim Engellendi:** Bunu kullanabilmek için .gg/voido sunucusunda olmalısın!`, flags: 64 });
                     }
                 }
             } catch(e) {}
@@ -208,17 +208,17 @@ module.exports = {
                 const state = global.activeDmClears.get(i.user.id);
                 
                 if (!state) {
-                    return i.reply({ content: '<:emoji235:1539424382332444732> Henüz DM silmeye başlanmadı, tekrar deneyiniz.', flags: 64 });
+                    return i.reply({ content: '<a:emoji235:1539424382332444732> Henüz DM silmeye başlanmadı, tekrar deneyiniz.', flags: 64 });
                 }
                 
                 state.stop = true;
-                return i.reply({ content: '<:emoji235:1539424382332444732> Durdurma sinyali gönderildi, silme işlemi kesiliyor...', flags: 64 });
+                return i.reply({ content: '<a:emoji235:1539424382332444732> Durdurma sinyali gönderildi, silme işlemi kesiliyor...', flags: 64 });
             }
 
             if (id === 'btn_dm_auth_saved') {
                 const userAccounts = await Account.find({ userId: i.user.id });
                 if (userAccounts.length === 0) {
-                    return i.reply({ content: '<:emoji235:1539424382332444732> Sisteme kayıtlı hiçbir tokeniniz bulunmuyor! Lütfen paneldeki "Yeni Token Ekle" butonuna basarak kanala gidin.', flags: 64 });
+                    return i.reply({ content: '<a:emoji235:1539424382332444732> Sisteme kayıtlı hiçbir tokeniniz bulunmuyor! Lütfen paneldeki "Yeni Token Ekle" butonuna basarak kanala gidin.', flags: 64 });
                 }
 
                 const options = userAccounts.map((acc, index) => ({
@@ -235,7 +235,7 @@ module.exports = {
                 );
 
                 await i.reply({ 
-                    content: '<:emoji105:1539424496346206298> Lütfen DM kutusunu temizleyecek olan hesabınızı (tokeninizi) seçin:', 
+                    content: '<a:emoji105:1539424496346206298> Lütfen DM kutusunu temizleyecek olan hesabınızı (tokeninizi) seçin:', 
                     components: [selectMenu], 
                     flags: 64 
                 });
@@ -246,7 +246,7 @@ module.exports = {
                 const selectedToken = i.values[0];
                 await UserConfig.updateOne({ userId: i.user.id }, { dmToken: selectedToken }, { upsert: true });
                 
-                await i.editReply({ content: '<:emoji144:1539424259552579604> Seçtiğiniz hesap başarıyla DM Temizleyici olarak ayarlandı! Artık `/dmtemizle` kullanabilirsiniz.', components: [] });
+                await i.editReply({ content: '<a:emoji105:1539424496346206298> Seçtiğiniz hesap başarıyla DM Temizleyici olarak ayarlandı! Artık `/dmtemizle` kullanabilirsiniz.', components: [] });
             }
         } catch (err) { console.error("Buton hatası:", err); }
     }

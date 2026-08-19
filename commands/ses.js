@@ -15,13 +15,13 @@ async function renderSesPanel(userId, guild, client) {
     const aktifSayisi = userAccounts.filter(acc => global.activeTokens?.has(acc.token)).length;
 
     const embed = new EmbedBuilder()
-        .setTitle('<:emoji133:1539424360543293521> Void | Ses ve RPC Yönetimi <:emoji141:1539424556412829817>')
+        .setTitle('<a:emoji133:1539424360543293521> Void | Ses ve RPC Yönetimi <a:emoji195:1539424442768424992>')
         .setColor('#2b2d31')
         .setDescription(
-            '<:emoji105:1539424496346206298> **7/24 Ses & Durum Yönetimi**\n' +
+            '<a:emoji105:1539424496346206298> **7/24 Ses & Durum Yönetimi**\n' +
             'Kayıtlı tokenlerinizi belirlediğiniz sunucunun ses kanalına sokabilirsiniz.\n\n' +
-            `<:emoji144:1539424259552579604> Seste Olan Hesaplar: **${aktifSayisi}**\n\n` +
-            '<:emoji141:1539424556412829817> *Sese sokma ve çıkarma işlemleri için butonları kullanın.*'
+            `<a:emoji105:1539424496346206298> Seste Olan Hesaplar: **${aktifSayisi}**\n\n` +
+            '<a:emoji195:1539424442768424992> *Sese sokma ve çıkarma işlemleri için butonları kullanın.*'
         );
 
     const row1 = new ActionRowBuilder().addComponents(
@@ -42,10 +42,10 @@ module.exports = {
 
     async executeText(message) {
         const infoEmbed = new EmbedBuilder()
-            .setTitle('<:emoji133:1539424360543293521> Void | Ses Yönetim Sistemi <:emoji141:1539424556412829817>')
-            .setDescription('<:emoji105:1539424496346206298> **Sistem Hakkında:**\nKayıtlı tokenlerinizi dilediğiniz gibi tek tek veya toplu olarak sese sokabilirsiniz.\n\n<:emoji141:1539424556412829817> *Aşağıdaki butona tıklayın!*')
+            .setTitle('<a:emoji133:1539424360543293521> Void | Ses Yönetim Sistemi <a:emoji195:1539424442768424992>')
+            .setDescription('<a:emoji105:1539424496346206298> **Sistem Hakkında:**\nKayıtlı tokenlerinizi dilediğiniz gibi tek tek veya toplu olarak sese sokabilirsiniz.\n\n<a:emoji195:1539424442768424992> *Aşağıdaki butona tıklayın!*')
             .setColor('#2b2d31');
-        const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('btn_ses_panel').setLabel('Ses Panelini Aç').setStyle(ButtonStyle.Secondary).setEmoji('1539424556412829817'));
+        const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('btn_ses_panel').setLabel('Ses Panelini Aç').setStyle(ButtonStyle.Secondary).setEmoji('1539424442768424992'));
         await message.channel.send({ embeds: [infoEmbed], components: [row] });
     },
 
@@ -60,12 +60,12 @@ module.exports = {
         // ==================== SESE SOKMA İŞLEMLERİ ====================
         if (id === 'tk_ses_sok_hepsi' || id === 'tk_ses_sok_sec') {
             const userAccounts = await Account.find({ userId: i.user.id });
-            if (userAccounts.length === 0) return i.reply({ content: '<:emoji235:1539424382332444732> Kayıtlı tokeniniz yok!', flags: 64 });
+            if (userAccounts.length === 0) return i.reply({ content: '<a:emoji235:1539424382332444732> Kayıtlı tokeniniz yok!', flags: 64 });
 
             if (id === 'tk_ses_sok_sec') {
                 const options = userAccounts.map((acc, index) => ({ label: acc.username || `Hesap ${index + 1}`, value: acc.token }));
                 const selectMenu = new ActionRowBuilder().addComponents(new StringSelectMenuBuilder().setCustomId('select_ses_sok').setPlaceholder('Sese sokulacak hesabı seçin').addOptions(options));
-                return i.reply({ content: '<:emoji105:1539424496346206298> Lütfen sese sokmak istediğiniz hesabı seçin:', components: [selectMenu], flags: 64 });
+                return i.reply({ content: '<a:emoji105:1539424496346206298> Lütfen sese sokmak istediğiniz hesabı seçin:', components: [selectMenu], flags: 64 });
             }
 
             // Hepsini Sese Sok modu
@@ -110,18 +110,18 @@ module.exports = {
                 } catch (e) {}
             }
             await i.editReply(await renderSesPanel(i.user.id, i.guild, i.client));
-            await i.followUp({ content: '<:emoji144:1539424259552579604> İşlem tamamlandı!', flags: 64 });
+            await i.followUp({ content: '<a:emoji133:1539424360543293521> İşlem tamamlandı!', flags: 64 });
         }
 
         // ==================== SESTEN ÇIKARMA İŞLEMLERİ ====================
         if (id === 'tk_ses_cikar_hepsi' || id === 'tk_ses_cikar_sec') {
             const userAccounts = await Account.find({ userId: i.user.id });
-            if (userAccounts.length === 0) return i.reply({ content: '<:emoji235:1539424382332444732> Kayıtlı tokeniniz yok!', flags: 64 });
+            if (userAccounts.length === 0) return i.reply({ content: '<a:emoji235:1539424382332444732> Kayıtlı tokeniniz yok!', flags: 64 });
 
             if (id === 'tk_ses_cikar_sec') {
                 const options = userAccounts.map((acc, index) => ({ label: acc.username || `Hesap ${index + 1}`, value: acc.token }));
                 const selectMenu = new ActionRowBuilder().addComponents(new StringSelectMenuBuilder().setCustomId('select_ses_cikar').setPlaceholder('Sesten çıkarılacak hesabı seçin').addOptions(options));
-                return i.reply({ content: '<:emoji105:1539424496346206298> Lütfen sesten çıkarmak istediğiniz hesabı seçin:', components: [selectMenu], flags: 64 });
+                return i.reply({ content: '<a:emoji105:1539424496346206298> Lütfen sesten çıkarmak istediğiniz hesabı seçin:', components: [selectMenu], flags: 64 });
             }
 
             // Hepsini Çıkar

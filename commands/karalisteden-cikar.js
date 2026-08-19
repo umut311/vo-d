@@ -8,29 +8,29 @@ module.exports = {
     name: 'karalistedencikar',
     async executeText(message, args) {
         if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
-            return message.reply('<:emoji235:1539424382332444732> Bu komutu kullanmak için yetkiniz yok!');
+            return message.reply('<a:emoji235:1539424382332444732> Bu komutu kullanmak için yetkiniz yok!');
         }
 
         if (args.length === 0) {
-            return message.reply('<:emoji235:1539424382332444732> Kullanımı: `v!karalistedencikar @kullanici/ID`');
+            return message.reply('<a:emoji235:1539424382332444732> Kullanımı: `v!karalistedencikar @kullanici/ID`');
         }
 
         const targetId = args[0].replace(/[<@!>]/g, '');
         const targetUser = await message.client.users.fetch(targetId).catch(() => null);
-        if (!targetUser) return message.reply('<:emoji235:1539424382332444732> Kullanıcı bulunamadı!');
+        if (!targetUser) return message.reply('<a:emoji235:1539424382332444732> Kullanıcı bulunamadı!');
 
         const deleted = await Blacklist.findOneAndDelete({ userId: targetUser.id });
 
         if (!deleted) {
-            return message.reply('<:emoji235:1539424382332444732> Bu kullanıcı zaten karalistede değil.');
+            return message.reply('<a:emoji235:1539424382332444732> Bu kullanıcı zaten karalistede değil.');
         }
 
-        await message.reply(`<:emoji144:1539424259552579604> ${targetUser} kullanıcısının karaliste cezası kaldırıldı.`);
+        await message.reply(`<a:emoji105:1539424496346206298> ${targetUser} kullanıcısının karaliste cezası kaldırıldı.`);
 
         const logChannel = message.client.channels.cache.get(LOG_CHANNEL) || await message.client.channels.fetch(LOG_CHANNEL).catch(()=>null);
         if (logChannel) {
             const embed = new EmbedBuilder()
-                .setTitle('<:emoji133:1539424360543293521> Void | Karaliste Cezası Kaldırıldı <:emoji141:1539424556412829817>')
+                .setTitle('<a:emoji133:1539424360543293521> Void | Karaliste Cezası Kaldırıldı <a:emoji195:1539424442768424992>')
                 .setColor('#2b2d31')
                 .addFields(
                     { name: 'Affedilen', value: `${targetUser} (\`${targetUser.id}\`)`, inline: true },

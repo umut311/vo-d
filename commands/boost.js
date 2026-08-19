@@ -12,16 +12,16 @@ module.exports = {
     
     async executeText(message) {
         if (!message.member.permissions.has(PermissionFlagsBits.Administrator) && message.author.id !== "345821033414262794") {
-            return message.reply('<:emoji6:1539424274983555112> **Bu komutu kullanmak için Yönetici olmalısın!**').then(m => setTimeout(() => m.delete().catch(()=>{}), 5000));
+            return message.reply('<a:emoji6:1539424274983555112> **Bu komutu kullanmak için Yönetici olmalısın!**').then(m => setTimeout(() => m.delete().catch(()=>{}), 5000));
         }
 
         const serverIcon = message.guild?.iconURL({ dynamic: true }) || message.client.user.displayAvatarURL({ dynamic: true });
 
         const embed = new EmbedBuilder()
-            .setTitle('<:emoji133:1539424360543293521> Void | Boost Log Sistemi Aktif! <:emoji141:1539424556412829817>')
+            .setTitle('<a:emoji133:1539424360543293521> Void | Boost Log Sistemi Aktif! <a:emoji195:1539424442768424992>')
             .setDescription(
-                '<:emoji105:1539424496346206298> **Boost Log Sistemi Başarıyla Tanımlandı!**\n\n' +
-                '<:emoji144:1539424259552579604> Artık sunucuya basılan her takviye anında <#1538176283161403434> kanalına otomatik olarak düşecektir.\n\n' +
+                '<a:emoji105:1539424496346206298> **Boost Log Sistemi Başarıyla Tanımlandı!**\n\n' +
+                '<a:emoji105:1539424496346206298> Artık sunucuya basılan her takviye anında <#1538176283161403434> kanalına otomatik olarak düşecektir.\n\n' +
                 '**Loglanacak Bilgiler:**\n' +
                 '• Takviye basan kahraman\n' +
                 '• Toplam takviye sayısı\n' +

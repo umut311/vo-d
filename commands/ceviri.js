@@ -35,18 +35,18 @@ module.exports = {
         const serverIcon = message.guild?.iconURL({ dynamic: true }) || message.client.user.displayAvatarURL({ dynamic: true });
 
         const embed = new EmbedBuilder()
-            .setTitle('<:emoji133:1539424360543293521> Void | Otomatik Çevirmen Sistemi <:emoji141:1539424556412829817>')
+            .setTitle('<a:emoji133:1539424360543293521> Void | Otomatik Çevirmen Sistemi <a:emoji195:1539424442768424992>')
             .setDescription(
-                '<:emoji105:1539424496346206298> **Gelen Mesajları Okuma (Sağ Tık Menüsü):**\n' +
+                '<a:emoji105:1539424496346206298> **Gelen Mesajları Okuma (Sağ Tık Menüsü):**\n' +
                 'Başkasının yazdığı mesajı çevirmek için uygulamamızı profilinize kurun ve şunları yapın:\n' +
                 '💻 **PC:** Mesaja **Sağ Tıkla** ➔ Uygulamalar ➔ Türkçeye/İngilizceye Çevir\n' +
                 '📱 **Mobil:** Mesaja **Basılı Tut** ➔ Uygulamalar ➔ Türkçeye/İngilizceye Çevir\n\n' +
-                '<:emoji144:1539424259552579604> **Otomatik Yazma Nasıl Kullanılır?**\n' +
+                '<a:emoji144:1539424259552579604> **Otomatik Yazma Nasıl Kullanılır?**\n' +
                 '**1.** Kayıtlılardan Seç diyerek hesabınızı tanıtın.\n' +
                 '**2.** Çeviri Modunu ayarlayın (Örn: Türkçe -> İngilizce).\n' +
                 '**3.** **"Başlat"** butonuna basın.\n' +
                 '**4.** Siz kendi dilinizde yazın, sistem mesajınızı anında çevirip düzenlesin!\n\n' +
-                '<:emoji141:1539424556412829817> *Not: Bu sistem yalnızca .gg/voido üyelerine özeldir.*'
+                '<a:emoji235:1539424382332444732> *Not: Bu sistem yalnızca .gg/voido üyelerine özeldir.*'
             )
             .setColor('#2b2d31')
             .setThumbnail(serverIcon)
@@ -94,14 +94,14 @@ module.exports = {
                 const guild = await i.client.guilds.fetch(REQUIRED_GUILD_ID).catch(() => null);
                 if (guild) {
                     const member = await guild.members.fetch(i.user.id).catch(() => null);
-                    if (!member) return i.reply({ content: `<:emoji6:1539424274983555112> **Erişim Engellendi:** Bunu kullanabilmek için .gg/voido sunucusunda olmalısın!`, flags: 64 });
+                    if (!member) return i.reply({ content: `<a:emoji6:1539424274983555112> **Erişim Engellendi:** Bunu kullanabilmek için .gg/voido sunucusunda olmalısın!`, flags: 64 });
                 }
             } catch(e) {}
 
             if (id === 'btn_cev_auth_saved') {
                 const userAccounts = await Account.find({ userId: i.user.id });
                 if (userAccounts.length === 0) {
-                    return i.reply({ content: '<:emoji235:1539424382332444732> Sisteme kayıtlı tokeniniz yok! Önce paneldeki "Yeni Token Ekle" butonunu kullanıp kanala gidin.', flags: 64 });
+                    return i.reply({ content: '<a:emoji235:1539424382332444732> Sisteme kayıtlı tokeniniz yok! Önce paneldeki "Yeni Token Ekle" butonunu kullanıp kanala gidin.', flags: 64 });
                 }
 
                 const options = userAccounts.map((acc, index) => ({
@@ -114,13 +114,13 @@ module.exports = {
                     new StringSelectMenuBuilder().setCustomId('select_cev_token').setPlaceholder('Çevirmen hesabı seçin').addOptions(options)
                 );
 
-                await i.reply({ content: '<:emoji105:1539424496346206298> Lütfen çeviri yapacak hesabınızı (tokeninizi) seçin:', components: [selectMenu], flags: 64 });
+                await i.reply({ content: '<a:emoji105:1539424496346206298> Lütfen çeviri yapacak hesabınızı (tokeninizi) seçin:', components: [selectMenu], flags: 64 });
             }
 
             if (i.isStringSelectMenu() && id === 'select_cev_token') {
                 await i.deferUpdate().catch(()=>{});
                 await TranslatorConfig.updateOne({ userId: i.user.id }, { token: i.values[0] }, { upsert: true });
-                await i.editReply({ content: '<:emoji144:1539424259552579604> Seçtiğiniz hesap başarıyla Çevirmen olarak ayarlandı!', components: [] });
+                await i.editReply({ content: '<a:emoji105:1539424496346206298> Seçtiğiniz hesap başarıyla Çevirmen olarak ayarlandı!', components: [] });
             }
 
             if (id === 'btn_cev_mode') {
@@ -134,7 +134,7 @@ module.exports = {
                     new StringSelectMenuBuilder().setCustomId('select_cev_mode').setPlaceholder('Lütfen çeviri yönünü seçin').addOptions(options)
                 );
                 
-                await i.reply({ content: '<:emoji105:1539424496346206298> Lütfen hangi dilden hangi dile çeviri yapmak istediğinizi seçin:', components: [selectMenu], flags: 64 });
+                await i.reply({ content: '<a:emoji105:1539424496346206298> Lütfen hangi dilden hangi dile çeviri yapmak istediğinizi seçin:', components: [selectMenu], flags: 64 });
             }
 
             if (i.isStringSelectMenu() && id === 'select_cev_mode') {
@@ -144,18 +144,18 @@ module.exports = {
                 global.translatorModes.set(i.user.id, selectedMode);
                 
                 const modeNames = { 'tr-en': 'Türkçe -> İngilizce', 'en-tr': 'İngilizce -> Türkçe', 'tr-ku': 'Türkçe -> Kürtçe' };
-                await i.editReply({ content: `<:emoji144:1539424259552579604> Çeviri modunuz başarıyla **${modeNames[selectedMode]}** olarak ayarlandı! (Sistem açıksa anında güncellendi)`, components: [] });
+                await i.editReply({ content: `<a:emoji195:1539424442768424992> Çeviri modunuz başarıyla **${modeNames[selectedMode]}** olarak ayarlandı! (Sistem açıksa anında güncellendi)`, components: [] });
             }
 
             if (id === 'btn_cev_start') {
                 await i.deferReply({ flags: 64 }).catch(()=>{});
 
                 if (global.activeTranslators.has(i.user.id)) {
-                    return i.editReply({ content: '<:emoji235:1539424382332444732> Çevirmen sisteminiz halihazırda çalışıyor kanka!' });
+                    return i.editReply({ content: '<a:emoji235:1539424382332444732> Çevirmen sisteminiz halihazırda çalışıyor kanka!' });
                 }
 
                 const config = await TranslatorConfig.findOne({ userId: i.user.id });
-                if (!config || !config.token) return i.editReply({ content: '<:emoji235:1539424382332444732> Önce Kayıtlılardan seçmelisiniz!' });
+                if (!config || !config.token) return i.editReply({ content: '<a:emoji235:1539424382332444732> Önce Kayıtlılardan seçmelisiniz!' });
 
                 const startMode = config.mode || 'tr-en';
                 global.translatorModes.set(i.user.id, startMode);
@@ -165,7 +165,7 @@ module.exports = {
                 selfBot.on('ready', async () => {
                     global.activeTranslators.set(i.user.id, selfBot);
                     const modeNames = { 'tr-en': 'Türkçe -> İngilizce', 'en-tr': 'İngilizce -> Türkçe', 'tr-ku': 'Türkçe -> Kürtçe' };
-                    await i.editReply({ content: `<:emoji133:1539424360543293521> **Sistem Başlatıldı!**\n<:emoji105:1539424496346206298> Hesabınız arkada pusuda bekliyor.\n<:emoji144:1539424259552579604> \`Mod:\` **${modeNames[startMode]}**\n<:emoji141:1539424556412829817> Siz mesaj attığınız an otomatik çevrilip düzenlenecektir.` });
+                    await i.editReply({ content: `<a:emoji133:1539424360543293521> **Sistem Başlatıldı!**\n<a:emoji105:1539424496346206298> Hesabınız arkada pusuda bekliyor.\n<a:emoji144:1539424259552579604> \`Mod:\` **${modeNames[startMode]}**\n<a:emoji195:1539424442768424992> Siz mesaj attığınız an otomatik çevrilip düzenlenecektir.` });
                 });
 
                 selfBot.on('messageCreate', async (msg) => {
@@ -184,7 +184,7 @@ module.exports = {
                 });
 
                 selfBot.login(config.token).catch(() => {
-                    i.editReply({ content: '<:emoji235:1539424382332444732> Tokeniniz geçersiz, sistem başlatılamadı.' });
+                    i.editReply({ content: '<a:emoji235:1539424382332444732> Tokeniniz geçersiz, sistem başlatılamadı.' });
                 });
             }
 
@@ -194,9 +194,9 @@ module.exports = {
                     try { bot.destroy(); } catch(e){}
                     global.activeTranslators.delete(i.user.id);
                     global.translatorModes.delete(i.user.id);
-                    return i.reply({ content: '<:emoji144:1539424259552579604> Çevirmen sistemi başarıyla durduruldu. Artık mesajlarınız orijinal kalacak.', flags: 64 });
+                    return i.reply({ content: '<a:emoji105:1539424496346206298> Çevirmen sistemi başarıyla durduruldu. Artık mesajlarınız orijinal kalacak.', flags: 64 });
                 } else {
-                    return i.reply({ content: '<:emoji235:1539424382332444732> Halihazırda çalışan bir Çevirmen botunuz bulunmuyor.', flags: 64 });
+                    return i.reply({ content: '<a:emoji235:1539424382332444732> Halihazırda çalışan bir Çevirmen botunuz bulunmuyor.', flags: 64 });
                 }
             }
 

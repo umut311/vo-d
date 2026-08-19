@@ -11,11 +11,11 @@ module.exports = {
         .addStringOption(opt => opt.setName('id').setDescription('Kullanıcı ID').setRequired(true)),
 
     async execute(interaction) {
-        await interaction.reply({ content: '<:emoji235:1539424382332444732> Şu an sadece metin (vunban) komutu ile çalışmaktadır.', flags: 64 });
+        await interaction.reply({ content: '<a:emoji235:1539424382332444732> Şu an sadece metin (vunban) komutu ile çalışmaktadır.', flags: 64 });
     },
 
     async executeText(message, args) {
-        if (args.length === 0) return message.reply('<:emoji235:1539424382332444732> Kullanımı: `vunban ID [sebep]`');
+        if (args.length === 0) return message.reply('<a:emoji235:1539424382332444732> Kullanımı: `vunban ID [sebep]`');
         
         const targetId = args[0];
         const reason = args.slice(1).join(' ') || 'Belirtilmedi.';
@@ -23,10 +23,10 @@ module.exports = {
         try {
             await message.guild.members.unban(targetId, `${message.author.tag} - ${reason}`);
         } catch (e) {
-            return message.reply('<:emoji235:1539424382332444732> Kullanıcı yasaklı değil veya ID yanlış!');
+            return message.reply('<a:emoji235:1539424382332444732> Kullanıcı yasaklı değil veya ID yanlış!');
         }
 
-        message.channel.send(`<:emoji144:1539424259552579604> **${targetId}** ID'li kullanıcının yasağı kaldırıldı.`);
+        message.channel.send(`<a:emoji144:1539424259552579604> **${targetId}** ID'li kullanıcının yasağı kaldırıldı.`);
 
         // Emojili Şık Log
         let logChannel = message.client.channels.cache.get(UNBAN_LOG_CHANNEL);
@@ -36,12 +36,12 @@ module.exports = {
 
         if (logChannel) {
             const logEmbed = new EmbedBuilder()
-                .setTitle('<:emoji133:1539424360543293521> Void | Unban Raporu <:emoji141:1539424556412829817>')
+                .setTitle('<a:emoji133:1539424360543293521> Void | Unban Raporu <a:emoji141:1539424556412829817>')
                 .setColor('#00ff00')
                 .setDescription(
-                    `<:emoji105:1539424496346206298> **Kullanıcı ID:** \`${targetId}\`\n` +
-                    `<:emoji144:1539424259552579604> **Yetkili:** ${message.author}\n` +
-                    `<:emoji141:1539424556412829817> **Sebep:** \`${reason}\`\n\n` +
+                    `<a:emoji105:1539424496346206298> **Kullanıcı ID:** \`${targetId}\`\n` +
+                    `<a:emoji144:1539424259552579604> **Yetkili:** ${message.author}\n` +
+                    `<a:emoji141:1539424556412829817> **Sebep:** \`${reason}\`\n\n` +
                     `📍 **İşlem Yapılan Kanal:** ${message.channel}`
                 )
                 .setTimestamp();

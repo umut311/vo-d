@@ -19,11 +19,11 @@ module.exports = {
         .addStringOption(opt => opt.setName('sebep').setDescription('Sebep').setRequired(false)),
 
     async execute(interaction) {
-        await interaction.reply({ content: 'Şu an sadece metin (vban) komutu ile çalışmaktadır.', flags: 64 });
+        await interaction.reply({ content: '<a:emoji235:1539424382332444732> Şu an sadece metin (vban) komutu ile çalışmaktadır.', flags: 64 });
     },
 
     async executeText(message, args) {
-        if (args.length === 0) return message.reply('<:emoji6:1539424274983555112> Kullanımı: `vban @kullanici/ID [sebep]`');
+        if (args.length === 0) return message.reply('<a:emoji6:1539424274983555112> Kullanımı: `vban @kullanici/ID [sebep]`');
         
         const targetId = args[0].replace(/[<@!>]/g, '');
         const reason = args.slice(1).join(' ') || 'Belirtilmedi.';
@@ -31,12 +31,12 @@ module.exports = {
         const targetMember = await message.guild.members.fetch(targetId).catch(()=>null);
         const targetUser = targetMember ? targetMember.user : await message.client.users.fetch(targetId).catch(()=>null);
 
-        if (!targetUser) return message.reply('<:emoji6:1539424274983555112> Kullanıcı bulunamadı!');
+        if (!targetUser) return message.reply('<a:emoji6:1539424274983555112> Kullanıcı bulunamadı!');
 
         // Kullanıcıya DM At
         try {
             const dmEmbed = new EmbedBuilder()
-                .setTitle('<:emoji133:1539424360543293521> Sunucudan Yasaklandınız!')
+                .setTitle('<a:emoji133:1539424360543293521> Sunucudan Yasaklandınız!')
                 .setDescription(`**${message.guild.name}** sunucusundan yasaklandınız.\n\n**Sebep:** ${reason}\n**Yasaklayan:** ${message.author.tag}`)
                 .setColor('#2b2d31');
             await targetUser.send({ embeds: [dmEmbed] });
@@ -44,7 +44,7 @@ module.exports = {
 
         // Ban İşlemi
         await message.guild.members.ban(targetId, { reason: `${message.author.tag} - ${reason}` }).catch(e => {
-            return message.reply('<:emoji6:1539424274983555112> Bu kullanıcıyı banlayamıyorum, yetkim veya rol sıram yetmiyor olabilir.');
+            return message.reply('<a:emoji6:1539424274983555112> Bu kullanıcıyı banlayamıyorum, yetkim veya rol sıram yetmiyor olabilir.');
         });
 
         // ModStat (Yetkili Ban Sayısını) Güncelle
@@ -54,7 +54,7 @@ module.exports = {
             { upsert: true, new: true }
         );
 
-        message.channel.send(`<:emoji144:1539424259552579604> **${targetUser.tag}** başarıyla sunucudan yasaklandı.`);
+        message.channel.send(`<a:emoji105:1539424496346206298> **${targetUser.tag}** başarıyla sunucudan yasaklandı.`);
 
         // Kendi Temana Uygun Emojili Şık Log
         let logChannel = message.client.channels.cache.get(BAN_LOG_CHANNEL);
@@ -64,12 +64,12 @@ module.exports = {
 
         if (logChannel) {
             const logEmbed = new EmbedBuilder()
-                .setTitle('<:emoji133:1539424360543293521> Void | Ban Raporu <:emoji141:1539424556412829817>')
+                .setTitle('<a:emoji133:1539424360543293521> Void | Ban Raporu <a:emoji195:1539424442768424992>')
                 .setColor('#2b2d31')
                 .setDescription(
-                    `<:emoji105:1539424496346206298> **Yasaklanan:** ${targetUser} (\`${targetUser.id}\`)\n` +
-                    `<:emoji144:1539424259552579604> **Yetkili:** ${message.author} (\`Toplam Ban: ${modStat.bans}\`)\n` +
-                    `<:emoji141:1539424556412829817> **Sebep:** \`${reason}\`\n\n` +
+                    `<a:emoji105:1539424496346206298> **Yasaklanan:** ${targetUser} (\`${targetUser.id}\`)\n` +
+                    `<a:emoji105:1539424496346206298> **Yetkili:** ${message.author} (\`Toplam Ban: ${modStat.bans}\`)\n` +
+                    `<a:emoji195:1539424442768424992> **Sebep:** \`${reason}\`\n\n` +
                     `📍 **İşlem Yapılan Kanal:** ${message.channel}`
                 )
                 .setThumbnail(targetUser.displayAvatarURL({ dynamic: true }))

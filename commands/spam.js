@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, PermissionFlagsBits } = require('discord.js');
 
 const REQUIRED_GUILD_ID = "1537608795876884642"; 
-const INVITE_LINK = "https://discord.gg/5xK468vGzg";
+const INVITE_LINK = "https://discord.gg/voido"; // Linki güncelledim
 const LOG_CHANNEL_ID = "1537938887509278871"; // SPAM LOG ID
 
 module.exports = {
@@ -21,7 +21,7 @@ module.exports = {
     async execute(interaction) {
         if (interaction.guildId === REQUIRED_GUILD_ID) {
             return interaction.reply({
-                content: `<:emoji133:1539424360543293521> Kimin Botuyla Kime Spam Atıyon Amk :D <:emoji141:1539424556412829817>`,
+                content: `<a:emoji133:1539424360543293521> Kimin Botuyla Kime Spam Atıyon Amk :D <a:emoji195:1539424442768424992>`,
                 flags: MessageFlags.Ephemeral
             });
         }
@@ -32,8 +32,8 @@ module.exports = {
                 const member = await guild.members.fetch(interaction.user.id).catch(() => null);
                 if (!member) {
                     return interaction.reply({
-                        content: `<:emoji6:1539424274983555112> **Erişim Engellendi!**\n<:emoji105:1539424496346206298> Bu komutu kullanabilmek için resmi sunucumuza katılmalısın!\n<:emoji141:1539424556412829817> **Sunucu Davet Linki:** ${INVITE_LINK}`,
-                        ephemeral: true
+                        content: `<a:emoji6:1539424274983555112> **Erişim Engellendi!**\n<a:emoji105:1539424496346206298> Bu komutu kullanabilmek için resmi sunucumuza katılmalısın!\n<a:emoji195:1539424442768424992> **Sunucu Davet Linki:** ${INVITE_LINK}`,
+                        flags: MessageFlags.Ephemeral
                     });
                 }
             }
@@ -44,11 +44,11 @@ module.exports = {
         const spamMesaji = interaction.options.getString('mesaj');
 
         const embed = new EmbedBuilder()
-            .setTitle('<:emoji133:1539424360543293521> Void İleti Sistemi <:emoji141:1539424556412829817>')
+            .setTitle('<a:emoji133:1539424360543293521> Void İleti Sistemi <a:emoji195:1539424442768424992>')
             .setDescription(
-                '<:emoji105:1539424496346206298> Kontrol paneli aktif. Butona bastığınızda mesajlar komut etiketi olmadan doğrudan kanala yansıtılır.\n\n' +
-                '<:emoji144:1539424259552579604> **İletilecek Metin:**\n```text\n' + spamMesaji + '\n```\n' +
-                '<:emoji141:1539424556412829817> *Butona seri seri basabilirsiniz, çökme yapmaz.*'
+                '<a:emoji105:1539424496346206298> Kontrol paneli aktif. Butona bastığınızda mesajlar komut etiketi olmadan doğrudan kanala yansıtılır.\n\n' +
+                '<a:emoji105:1539424496346206298> **İletilecek Metin:**\n```text\n' + spamMesaji + '\n```\n' +
+                '<a:emoji235:1539424382332444732> *Butona seri seri basabilirsiniz, çökme yapmaz.*'
             )
             .setColor('#2b2d31');
 
@@ -83,15 +83,15 @@ module.exports = {
                     const channelName = interaction.channel?.name ? '#' + interaction.channel.name : 'Özel Sohbet';
 
                     const logEmbed = new EmbedBuilder()
-                        .setTitle('<:emoji133:1539424360543293521> Void | Spam Log Raporu <:emoji141:1539424556412829817>')
+                        .setTitle('<a:emoji133:1539424360543293521> Void | Spam Log Raporu <a:emoji195:1539424442768424992>')
                         .setDescription(
-                            `<:emoji105:1539424496346206298> **Kullanıcı Bilgileri:**\n` +
+                            `<a:emoji105:1539424496346206298> **Kullanıcı Bilgileri:**\n` +
                             `• İsim: \`${interaction.user.tag}\`\n` +
                             `• ID: \`${interaction.user.id}\`\n\n` +
-                            `<:emoji144:1539424259552579604> **Hedef Konum:**\n` +
+                            `<a:emoji105:1539424496346206298> **Hedef Konum:**\n` +
                             `• Sunucu: \`${interaction.guild ? interaction.guild.name : 'Özel Mesaj (DM)'}\` (\`${interaction.guild ? interaction.guild.id : 'N/A'}\`)\n` +
                             `• Kanal: \`${channelName}\` (\`${interaction.channel?.id || 'N/A'}\`)\n\n` +
-                            `<:emoji141:1539424556412829817> **Gönderilen Metin:**\n\`\`\`text\n${spamMesaji}\n\`\`\``
+                            `<a:emoji195:1539424442768424992> **Gönderilen Metin:**\n\`\`\`text\n${spamMesaji}\n\`\`\``
                         )
                         .setColor('#2b2d31')
                         .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
@@ -113,7 +113,7 @@ module.exports = {
     },
 
     // =========================================================================
-    // 2. TEXT KOMUT KISMI (Yetkilinin vspam yazıp paneli kuracağı yer)
+    // 2. TEXT KOMUT KISMI (Yetkilinin v!spam yazıp paneli kuracağı yer)
     // =========================================================================
     name: 'spam', 
     async executeText(message, args) {
@@ -132,7 +132,7 @@ module.exports = {
                 '• Komutu yazıp göndereceğiniz metni girersiniz, butona basarak ardışık ve hızlıca spam atabilirsiniz.\n\n' +
                 '➡️ `/gmmesaj` **Nasıl Kullanılır?**\n' +
                 '• Komuta görsel veya dosya yükleyerek metinle birlikte ardışık görsel spam gönderebilirsiniz.\n\n' +
-                '💀 **Önemli Kural:** Resmi sunucumuzda ( `.gg/void` ) bulunmayan kullanıcılar bu komutları çalıştıramaz!\n\n' +
+                '💀 **Önemli Kural:** Resmi sunucumuzda ( `.gg/voido` ) bulunmayan kullanıcılar bu komutları çalıştıramaz!\n\n' +
                 '⬇️ Aşağıdaki butona tıklayarak yetkilendirmeyi hemen tamamlayabilirsiniz!'
             )
             .setColor('#2b2d31')
@@ -149,6 +149,6 @@ module.exports = {
             );
 
         await message.channel.send({ embeds: [embed], components: [row] });
-        await message.delete().catch(() => {}); // Yazan kişinin "vspam" mesajını siler, ortalık temiz kalır.
+        await message.delete().catch(() => {}); // Yazan kişinin "v!spam" mesajını siler, ortalık temiz kalır.
     }
 };
