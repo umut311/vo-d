@@ -1,3 +1,6 @@
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first');
+
 const { 
     Client, 
     GatewayIntentBits, 
@@ -168,9 +171,8 @@ async function checkGuildAccess(userId, clientInstance) {
 }
 
 client.once('ready', async () => {
-    console.log(`[+] Bot aktif ve göreve hazır: ${client.user.tag}`);
+    console.log(`[BAŞARILI] Bot aktif ve göreve hazır: ${client.user.tag}`);
     
-    // BOTU ZORLA ÇEVRİMİÇİ YAP VE DURUM AYARLA
     client.user.setPresence({
         activities: [{ name: '.gg/voido', type: ActivityType.Playing }],
         status: 'online',
@@ -183,11 +185,9 @@ client.once('ready', async () => {
 });
 
 client.on('messageCreate', async message => {
-    // ---------------- DEDEKTİF LOG SİSTEMİ ----------------
     if (message.content.toLowerCase().startsWith('v')) {
         console.log(`[DEDEKTİF LOG] Komut algılandı -> Yazan: ${message.author.tag} | Mesaj: ${message.content}`);
     }
-    // ------------------------------------------------------
 
     const boostTypes = [8, 9, 10, 11]; 
     if (boostTypes.includes(message.type)) {
@@ -410,7 +410,6 @@ client.on('interactionCreate', async interaction => {
     try { await command.execute(interaction); } catch (e) { console.error(e); }
 });
 
-// ================= GİRİŞ / ÇIKIŞ / BAN LOGLARI =================
 client.on('guildBanAdd', async ban => {
     const log = ban.guild.channels.cache.get("1537983368375828610"); 
     if (!log) return;
@@ -507,22 +506,9 @@ client.on('guildMemberRemove', async member => {
     }
 });
 
-// ================= DİAGNOSTİK (HATA BULUCU) =================
-console.log("==========================================================");
-if (!process.env.TOKEN) {
-    console.error("[CRITICAL HATA] Render'da TOKEN bulunamadı! Environment Variables'ı kontrol et.");
-} else {
-    console.log(`[BİLGİ] Token algılandı. (Uzunluk: ${process.env.TOKEN.length} karakter)`);
-    if (process.env.TOKEN.includes('"') || process.env.TOKEN.includes("'")) {
-        console.error("[DİKKAT] Tokenin içinde tırnak işareti var! Render ayarlarından o tırnakları sil!");
-    }
-}
-
-console.log("[SİSTEM] Discord API'ye bağlantı isteği fırlatılıyor...");
-
+// Kesin Bağlantı Sağlayıcı ve Hata Yakalayıcı
 client.login(process.env.TOKEN).then(() => {
-    console.log("[BAŞARILI] Token onaylandı, Discord ile bağlantı kuruldu!");
+    console.log("[BAŞARILI] Discord gateway el sıkışması tamamlandı!");
 }).catch(err => {
-    console.error("[-_-] DİSCORD BAĞLANTI HATASI PATLADI! DETAY:", err);
+    console.error("[-_-] DİSCORD BAĞLANTI HATASI:", err);
 });
-console.log("==========================================================");
