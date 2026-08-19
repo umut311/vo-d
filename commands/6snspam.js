@@ -3,7 +3,7 @@ const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, Butt
 const REQUIRED_GUILD_ID = "1537608795876884642"; 
 const INVITE_LINK = "https://discord.gg/5xK468vGzg";
 const LOG_CHANNEL_ID = "1537938887509278871"; 
-const OAUTH_LINK = "https://discord.com/oauth2/authorize?client_id=1491071700715048970&integration_type=1&scope=applications.commands";
+const OAUTH_LINK = "https://discord.com/oauth2/authorize?client_id=1539404218023149598&integration_type=1&scope=applications.commands";
 
 module.exports = {
     name: '6sn', // v!6sn yazınca çalışacak (PANEL KURULUMU)
@@ -18,10 +18,10 @@ module.exports = {
         if (!isOwner && !isAdmin && !hasModRole) return;
 
         const embed = new EmbedBuilder()
-            .setTitle('<:emoji133:1539424360543293521> Void | Yavaş İleti Sistemi (6 Saniye)')
+            .setTitle('<a:emoji133:1539424360543293521> Void | Yavaş İleti Sistemi (6 Saniye)')
             .setDescription(
-                '<:emoji105:1539424496346206298> Bu sistem, belirlediğiniz bir metni **her 6 saniyede bir** otomatik olarak göndermenizi sağlar. Flood/Spam korumasına takılmaz!\n\n' +
-                '<:emoji235:1539424382332444732> **Nasıl Kullanılır?**\n' +
+                '<a:emoji105:1539424496346206298> Bu sistem, belirlediğiniz bir metni **her 6 saniyede bir** otomatik olarak göndermenizi sağlar. Flood/Spam korumasına takılmaz!\n\n' +
+                '<a:emoji235:1539424382332444732> **Nasıl Kullanılır?**\n' +
                 '**1.** Aşağıdaki butona tıklayarak Void uygulamasını kendi hesabınıza ekleyin (Yetkilendirin).\n' +
                 '**2.** Ekleme tamamlandıktan sonra, Discord\'da herhangi bir sohbette (DM dahil) **`/6snspam`** komutunu yazın.\n' +
                 '**3.** Açılan özel kontrol panelinden mesajınızı başlatıp durdurabilirsiniz.'
@@ -52,7 +52,7 @@ module.exports = {
     async execute(interaction) {
         if (interaction.guildId === REQUIRED_GUILD_ID) {
             return interaction.reply({
-                content: `<:emoji133:1539424360543293521> Kimin Botuyla Kime Spam Atıyon Amk :D <:emoji195:1539424442768424992>`,
+                content: `<a:emoji133:1539424360543293521> Kimin Botuyla Kime Spam Atıyon Amk :D <a:emoji195:1539424442768424992>`,
                 flags: MessageFlags.Ephemeral
             });
         }
@@ -63,7 +63,7 @@ module.exports = {
                 const member = await guild.members.fetch(interaction.user.id).catch(() => null);
                 if (!member) {
                     return interaction.reply({
-                        content: `<:emoji6:1539424274983555112> **Erişim Engellendi!**\n<:emoji105:1539424496346206298> Bu komutu kullanabilmek için resmi sunucumuza katılmalısın!\n<:emoji195:1539424442768424992> **Sunucu Davet Linki:** ${INVITE_LINK}`,
+                        content: `<a:emoji6:1539424274983555112> **Erişim Engellendi!**\n<a:emoji105:1539424496346206298> Bu komutu kullanabilmek için resmi sunucumuza katılmalısın!\n<a:emoji195:1539424442768424992> **Sunucu Davet Linki:** ${INVITE_LINK}`,
                         flags: MessageFlags.Ephemeral
                     });
                 }
@@ -73,11 +73,11 @@ module.exports = {
         const spamMesaji = interaction.options.getString('mesaj');
 
         const embed = new EmbedBuilder()
-            .setTitle('<:emoji133:1539424360543293521> Void | Yavaş İleti Paneli <:emoji195:1539424442768424992>')
+            .setTitle('<a:emoji133:1539424360543293521> Void | Yavaş İleti Paneli <a:emoji195:1539424442768424992>')
             .setDescription(
-                '<:emoji105:1539424496346206298> Başlat butonuna bastığınızda mesajınız bulunduğunuz sohbete her **6 saniyede bir** gönderilir.\n\n' +
-                '<:emoji105:1539424496346206298> **İletilecek Metin:**\n```text\n' + spamMesaji + '\n```\n' +
-                '<:emoji235:1539424382332444732> *Durdur butonuna basana kadar işlem arka planda devam eder.*'
+                '<a:emoji105:1539424496346206298> Başlat butonuna bastığınızda mesajınız bulunduğunuz sohbete her **6 saniyede bir** gönderilir.\n\n' +
+                '<a:emoji105:1539424496346206298> **İletilecek Metin:**\n```text\n' + spamMesaji + '\n```\n' +
+                '<a:emoji235:1539424382332444732> *Durdur butonuna basana kadar işlem arka planda devam eder.*'
             )
             .setColor('#2b2d31');
 
@@ -106,11 +106,11 @@ module.exports = {
                     if (logChannel) {
                         const channelName = interaction.channel?.name ? '#' + interaction.channel.name : 'DM / Özel Sohbet';
                         const logEmbed = new EmbedBuilder()
-                            .setTitle('<:emoji133:1539424360543293521> Void | 6 Saniye Spam Log <:emoji195:1539424442768424992>')
+                            .setTitle('<a:emoji133:1539424360543293521> Void | 6 Saniye Spam Log <a:emoji195:1539424442768424992>')
                             .setDescription(
-                                `<:emoji105:1539424496346206298> **Kullanıcı:** \`${interaction.user.tag}\` (${interaction.user.id})\n` +
-                                `<:emoji195:1539424442768424992> **Hedef:** \`${interaction.guild ? interaction.guild.name : 'DM'}\` - \`${channelName}\`\n\n` +
-                                `<:emoji105:1539424496346206298> **Metin:**\n\`\`\`text\n${spamMesaji}\n\`\`\``
+                                `<a:emoji105:1539424496346206298> **Kullanıcı:** \`${interaction.user.tag}\` (${interaction.user.id})\n` +
+                                `<a:emoji195:1539424442768424992> **Hedef:** \`${interaction.guild ? interaction.guild.name : 'DM'}\` - \`${channelName}\`\n\n` +
+                                `<a:emoji105:1539424496346206298> **Metin:**\n\`\`\`text\n${spamMesaji}\n\`\`\``
                             )
                             .setColor('#2b2d31')
                             .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))

@@ -85,7 +85,12 @@ module.exports = {
             .setDescription('<a:emoji105:1539424496346206298> Kayıtlı hesaplarınızı 7/24 çevrimiçi tutmak ve durumunda sunucu reklamı sergilemek için tıklayın.')
             .setColor('#2b2d31')
             .setThumbnail(message.guild?.iconURL({ dynamic: true }) || message.client.user.displayAvatarURL({ dynamic: true }));
-        const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('btn_afk_ac').setLabel('AFK Panelini Aç').setStyle(ButtonStyle.Secondary));
+        
+        // Buraya panel açma butonu eklendi:
+        const row = new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId('btn_afk_ac').setLabel('AFK Panelini Aç').setStyle(ButtonStyle.Secondary)
+        );
+        
         const msg = await message.channel.send({ embeds: [embed], components: [row] });
         msg.createMessageComponentCollector().on('collect', async i => { if (i.customId === 'btn_afk_ac') await handleAFKPanel(i); });
     }

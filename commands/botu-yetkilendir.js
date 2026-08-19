@@ -6,7 +6,7 @@ module.exports = {
         .setDescription('Void uygulamasını hesabınıza entegre etmek için yetkilendirme paneli.'),
 
     async execute(interaction) {
-        const yetkilendirmeLinki = "https://discord.com/oauth2/authorize?client_id=1491071700715048970&integration_type=1&scope=applications.commands";
+        const yetkilendirmeLinki = "https://discord.com/oauth2/authorize?client_id=1539404218023149598&integration_type=1&scope=applications.commands";
 
         const embed = new EmbedBuilder()
             .setTitle('<a:emoji133:1539424360543293521> Void | Uygulama Yetkilendirme Paneli <a:emoji195:1539424442768424992>')

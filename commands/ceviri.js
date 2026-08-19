@@ -57,7 +57,7 @@ module.exports = {
             new ButtonBuilder()
                 .setLabel('Uygulamayı Kur')
                 .setStyle(ButtonStyle.Link)
-                .setURL('https://discord.com/oauth2/authorize?client_id=1491071700715048970&integration_type=1&scope=applications.commands'),
+                .setURL('https://discord.com/oauth2/authorize?client_id=1539404218023149598&integration_type=1&scope=applications.commands'),
             new ButtonBuilder()
                 .setLabel('Yeni Token Ekle')
                 .setStyle(ButtonStyle.Link)

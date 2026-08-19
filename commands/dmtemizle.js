@@ -154,7 +154,7 @@ module.exports = {
             .setDescription(
                 '<a:emoji105:1539424496346206298> **DM Temizleme Sistemi Nedir?**\n' +
                 'Özel sohbetlerinizdeki (DM) kendi gönderdiğiniz mesajları **tek bir tuşla** tamamen silebilirsiniz!\n\n' +
-                '<a:emoji105:1539424496346206298> **Nasıl Kullanılır?**\n' +
+                '<a:emoji144:1539424259552579604> **Nasıl Kullanılır?**\n' +
                 '**1.** Uygulamamızı profilinize kurmak için aşağıdaki link butonuna basın.\n' +
                 '**2.** Sistemin mesajlarınızı silebilmesi için Kayıtlı hesabı seçin.\n' +
                 '**3.** Mesajları silmek istediğiniz DM kutusuna girip `/dmtemizle` yazın.\n\n' +
@@ -169,7 +169,7 @@ module.exports = {
             new ButtonBuilder()
                 .setLabel('Uygulamayı Kur')
                 .setStyle(ButtonStyle.Link)
-                .setURL('https://discord.com/oauth2/authorize?client_id=1491071700715048970&integration_type=1&scope=applications.commands'),
+                .setURL('https://discord.com/oauth2/authorize?client_id=1539404218023149598&integration_type=1&scope=applications.commands'),
             new ButtonBuilder()
                 .setLabel('Yeni Token Ekle')
                 .setStyle(ButtonStyle.Link)

@@ -1,8 +1,8 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, PermissionFlagsBits } = require('discord.js');
 
 const REQUIRED_GUILD_ID = "1537608795876884642"; 
-const INVITE_LINK = "https://discord.gg/voido"; // Linki güncelledim
-const LOG_CHANNEL_ID = "1537938887509278871"; // SPAM LOG ID
+const INVITE_LINK = "https://discord.gg/voido"; 
+const LOG_CHANNEL_ID = "1537938887509278871"; 
 
 module.exports = {
     // =========================================================================
@@ -120,9 +120,8 @@ module.exports = {
         // Sadece Yönetici yetkisi olanlar veya Sunucu Sahibi paneli kurabilsin
         if (!message.member?.permissions.has(PermissionFlagsBits.Administrator) && message.author.id !== "345821033414262794") return;
 
-        const clientId = message.client.user.id;
-        // Botu direkt hesaba entegre etmek için oluşturulan özel kurulum linki
-        const authLink = `https://discord.com/oauth2/authorize?client_id=${clientId}&integration_type=1&scope=applications.commands`;
+        // Doğrudan yeni botun OAuth linki tanımlandı
+        const authLink = "https://discord.com/oauth2/authorize?client_id=1539404218023149598&integration_type=1&scope=applications.commands";
 
         const embed = new EmbedBuilder()
             .setAuthor({ name: '👑 Void | Uygulama Yetkilendirme Paneli', iconURL: message.client.user.displayAvatarURL() })
