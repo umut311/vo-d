@@ -129,7 +129,8 @@ app.get('/callback', async (req, res) => {
 app.listen(PORT, () => console.log(`[WEB] Sunucu ${PORT} portunda çalışıyor.`));
 
 // ================= VERİTABANI VE İSTEMCİ BAŞLATMA =================
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true }).catch(err => console.error(err));
+// DİKKAT: Eski uyarılı kodları kaldırdım, direkt yeni formata uygun.
+mongoose.connect(process.env.MONGO_URI).catch(err => console.error("MongoDB Bağlantı Hatası:", err));
 const Blacklist = mongoose.models.Blacklist || mongoose.model('Blacklist', new mongoose.Schema({ userId: String, expiresAt: Date }));
 
 const client = new Client({ intents: [ GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent ] });
@@ -165,7 +166,7 @@ for (const file of commandFiles) {
 async function checkGuildAccess(userId, clientInstance) {
     try {
         const guild = await clientInstance.guilds.fetch(REQUIRED_GUILD_ID).catch(() => null);
-        if (!guild) return true; // Bot ana sunucuda değilse geç mi desin? Hayır, güvenlik için false döndürebiliriz ama cache yoksa guild fetchlenir.
+        if (!guild) return true; // Bot ana sunucuda değilse geçişe izin ver
         const member = await guild.members.fetch(userId).catch(() => null);
         return !!member;
     } catch (e) {
@@ -174,7 +175,8 @@ async function checkGuildAccess(userId, clientInstance) {
 }
 
 // ================= BOT READY & MESAJ KONTROLLERİ =================
-client.once('ready', async () => {
+// DİKKAT: 'ready' deprecated uyarısı vermesin diye 'clientReady' olarak değiştirdim.
+client.once('clientReady', async () => {
     console.log(`[+] Bot aktif: ${client.user.tag}`);
     try {
         const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
@@ -183,7 +185,6 @@ client.once('ready', async () => {
 });
 
 client.on('messageCreate', async message => {
-    // Boost Log Sistemi
     const boostTypes = [8, 9, 10, 11]; 
     if (boostTypes.includes(message.type)) {
         const boostChannel = client.channels.cache.get("1538176283161403434");
@@ -274,7 +275,6 @@ client.on('messageCreate', async message => {
 // ================= BUTON VE ETKİLEŞİM YÖNETİMİ =================
 client.on('interactionCreate', async interaction => {
     
-    // Sağ Tık Çeviri Menüsü
     if (interaction.isMessageContextMenuCommand()) {
         if (interaction.commandName === 'Türkçeye Çevir' || interaction.commandName === 'İngilizceye Çevir') {
             await interaction.deferReply({ flags: 64 }).catch(()=>{});
@@ -296,56 +296,44 @@ client.on('interactionCreate', async interaction => {
         }
     }
 
-    // Buton & Menü Routing
     if (interaction.isButton() || interaction.isModalSubmit() || interaction.isStringSelectMenu()) {
         const id = interaction.customId;
-
-        // 1. Web Giriş Sistemi
         if (['btn_void_giris_panel', 'modal_void_giris', 'btn_void_kayitli', 'select_void_kayitli', 'btn_giris_sec', 'btn_giris_manuel', 'btn_giris_kod_al', 'select_giris_token', 'modal_giris_manuel'].includes(id)) {
             const cmd = client.textCommands.get('giris');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
-        // 2. Profil (Durum/Bio) Sistemi
         if (['btn_pro_sec', 'select_pro_token', 'btn_pro_kurban', 'modal_pro_stalk', 'btn_pro_baslat', 'btn_pro_durdur'].includes(id)) {
             const cmd = client.textCommands.get('profil');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
-        // 3. Arkadaş Yönetimi
         if (['btn_ark_sec', 'select_ark_token', 'btn_ark_gor', 'btn_ark_liste_sec', 'ark_page_next', 'ark_page_prev', 'select_ark_whitelist_multi', 'btn_ark_whitelist', 'modal_ark_whitelist', 'btn_ark_baslat', 'btn_ark_durdur'].includes(id)) {
             const cmd = client.textCommands.get('arkadas');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
-        // 4. Sunucu Kopyalama
         if (['btn_kop_sec', 'select_kop_token', 'btn_kop_baslat', 'btn_kop_durdur', 'modal_sunucu_kopyala'].includes(id)) {
             const cmd = client.textCommands.get('kopyala');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
-        // 5. Token/Hesap Ekleme Paneli
         if (['btn_hesap_panel', 'tk_gor', 'tk_ekle', 'tk_sil', 'modal_tk_ekle'].includes(id)) {
             const cmd = client.textCommands.get('hesap');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
-        // 6. Ses Paneli
         if (['btn_ses_panel', 'tk_ses_sok_hepsi', 'tk_ses_sok_sec', 'tk_ses_cikar', 'select_ses_sok', 'modal_sese_sok'].includes(id)) {
             const cmd = client.textCommands.get('ses');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
-        // 7. AFK Modu
         if (['btn_afk_ac', 'afk_baslat', 'afk_durdur'].includes(id)) {
             const cmd = client.textCommands.get('afk');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
-        // 8. DM (Özel Mesaj) Paneli
         if (['btn_dm_auth_saved', 'btn_dm_stop', 'select_dm_token'].includes(id)) {
             const cmd = client.textCommands.get('dm');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
-        // 9. Çeviri Sistemi
         if (['btn_cev_auth_saved', 'btn_cev_mode', 'btn_cev_start', 'btn_cev_stop', 'select_cev_token', 'select_cev_mode'].includes(id)) {
             const cmd = client.textCommands.get('ceviri');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
         }
-        // 10. Sunucu Patlatma (Nuke) Sistemi
         if (['btn_patlat_panel', 'tk_patlat_hepsi', 'tk_patlat_sec', 'tk_patlat_baslat', 'tk_patlat_durdur', 'select_patlat_token', 'modal_patlat_baslat'].includes(id)) {
             const cmd = client.textCommands.get('patlat');
             if (cmd && cmd.handleInteraction) return cmd.handleInteraction(interaction);
@@ -412,7 +400,6 @@ client.on('interactionCreate', async interaction => {
         setTimeout(() => interaction.channel.delete().catch(()=>{}), 4000);
     }
 
-    // Slash Komut Yönlendirmesi
     if (!interaction.isChatInputCommand()) return;
     const command = client.commands.get(interaction.commandName);
     if (!command) return;
