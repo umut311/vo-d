@@ -28,7 +28,7 @@ const MY_CLIENT_SECRET = process.env.CLIENT_SECRET || "_I2W0duhYviJuoJqMBy6MT3VL
 const MY_REDIRECT_URI = "https://void-project-d59p.onrender.com/callback";
 const MOD_ROLE_ID = "1537938887509278871"; 
 const OWNER_ID = "345821033414262794"; 
-const REQUIRED_GUILD_ID = "1537608795876884642"; // .gg/voido Sunucu ID
+const REQUIRED_GUILD_ID = "1537608795876884642"; 
 const INVITE_LINK = "https://discord.gg/voido";
 
 const app = express();
@@ -36,7 +36,6 @@ const PORT = process.env.PORT || 3000;
 
 app.get('/', (req, res) => res.send('Void Bot 7/24 Aktif!'));
 
-// ================= VOID WEB GİRİŞ SAYFASI (YER İMİ SİSTEMLİ) =================
 app.get('/giris', (req, res) => {
     const token = req.query.token;
     if (!token) return res.send('Geçersiz bağlantı. Token bulunamadı.');
@@ -64,11 +63,8 @@ app.get('/giris', (req, res) => {
         <div class="container">
             <h1>F12'siz Giriş Yöntemi</h1>
             <p>F12 ile uğraşmamak için aşağıdaki yeşil butonu farenizle basılı tutun ve tarayıcınızın üstteki <b>Yer İmleri (Sık Kullanılanlar)</b> çubuğuna sürükleyip bırakın.</p>
-            
             <a href="javascript:${encodeURIComponent(scriptCode)}" class="bookmark-btn">🚀 Void Hesaba Gir</a>
-            
             <p style="margin-top: 20px; font-size: 14px;">Yer imlerine ekledikten sonra <a href="https://discord.com/login" target="_blank" style="color:#5865F2;">discord.com/login</a> sayfasına gidin ve üstteki çubuktan <b>"🚀 Void Hesaba Gir"</b> yazısına tıklayın. Şifresiz giriş yapılacaktır!</p>
-            
             <button class="btn" onclick="copyAndRedirect()">Yer imi yapamadım, Kodu Kopyala F12 yapacağım</button>
         </div>
         <script>
@@ -129,7 +125,6 @@ app.get('/callback', async (req, res) => {
 app.listen(PORT, () => console.log(`[WEB] Sunucu ${PORT} portunda çalışıyor.`));
 
 // ================= VERİTABANI VE İSTEMCİ BAŞLATMA =================
-// DİKKAT: Eski uyarılı kodları kaldırdım, direkt yeni formata uygun.
 mongoose.connect(process.env.MONGO_URI).catch(err => console.error("MongoDB Bağlantı Hatası:", err));
 const Blacklist = mongoose.models.Blacklist || mongoose.model('Blacklist', new mongoose.Schema({ userId: String, expiresAt: Date }));
 
@@ -162,22 +157,17 @@ for (const file of commandFiles) {
     }
 }
 
-// Güvenlik Yardımcı Fonksiyonu (.gg/voido Sunucunda Var mı?)
 async function checkGuildAccess(userId, clientInstance) {
     try {
         const guild = await clientInstance.guilds.fetch(REQUIRED_GUILD_ID).catch(() => null);
-        if (!guild) return true; // Bot ana sunucuda değilse geçişe izin ver
+        if (!guild) return true; 
         const member = await guild.members.fetch(userId).catch(() => null);
         return !!member;
-    } catch (e) {
-        return false;
-    }
+    } catch (e) { return false; }
 }
 
-// ================= BOT READY & MESAJ KONTROLLERİ =================
-// DİKKAT: 'ready' deprecated uyarısı vermesin diye 'clientReady' olarak değiştirdim.
-client.once('clientReady', async () => {
-    console.log(`[+] Bot aktif: ${client.user.tag}`);
+client.once('ready', async () => {
+    console.log(`[+] Bot aktif ve göreve hazır: ${client.user.tag}`);
     try {
         const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
         await rest.put(Routes.applicationCommands(client.user.id), { body: slashCommandsData });
@@ -185,6 +175,12 @@ client.once('clientReady', async () => {
 });
 
 client.on('messageCreate', async message => {
+    // ---------------- DEDEKTİF LOG SİSTEMİ ----------------
+    if (message.content.toLowerCase().startsWith('v')) {
+        console.log(`[DEDEKTİF LOG] Komut algılandı -> Yazan: ${message.author.tag} | Mesaj: ${message.content}`);
+    }
+    // ------------------------------------------------------
+
     const boostTypes = [8, 9, 10, 11]; 
     if (boostTypes.includes(message.type)) {
         const boostChannel = client.channels.cache.get("1538176283161403434");
@@ -222,7 +218,6 @@ client.on('messageCreate', async message => {
     const isAdmin = message.member?.permissions.has(PermissionFlagsBits.Administrator);
     const hasModRole = message.member?.roles.cache.has(MOD_ROLE_ID);
 
-    // KAPSAMLI GÜVENLİK KONTROLÜ: .gg/voido sunucusunda olmayan kimse komut kullanamaz!
     if (!isOwner) {
         const inMainGuild = await checkGuildAccess(message.author.id, client);
         if (!inMainGuild) {
@@ -232,7 +227,6 @@ client.on('messageCreate', async message => {
         }
     }
 
-    // Özel Ses Giriş Komutu
     if (commandName === 'sesebaglan' || commandName === 'sesgir') {
         if (!isOwner && !isAdmin && !hasModRole) return;
         
@@ -258,7 +252,6 @@ client.on('messageCreate', async message => {
         }
     }
 
-    // Normal Text (Prefix) Komut Yönlendirmesi
     const command = client.textCommands.get(commandName);
     if (!command) return;
 
@@ -269,7 +262,11 @@ client.on('messageCreate', async message => {
     const isBlacklisted = await Blacklist.findOne({ userId: message.author.id });
     if (!isOwner && isBlacklisted && (!isBlacklisted.expiresAt || isBlacklisted.expiresAt > new Date())) return;
     
-    try { await command.executeText(message, args); } catch (e) { console.error(e); }
+    try { 
+        await command.executeText(message, args); 
+    } catch (e) { 
+        console.error(`[HATA] ${commandName} komutu çalışırken çöktü:`, e); 
+    }
 });
 
 // ================= BUTON VE ETKİLEŞİM YÖNETİMİ =================
@@ -340,7 +337,6 @@ client.on('interactionCreate', async interaction => {
         }
     }
 
-    // ================= TICKET (DESTEK) SİSTEMİ =================
     if (interaction.isStringSelectMenu() && interaction.customId === 'ticket_category_select') {
         const modal = new ModalBuilder().setCustomId(`ticket_submit_${interaction.values[0]}`).setTitle('Destek Talebi Formu');
         modal.addComponents(new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('issue_text').setLabel('Lütfen konuyu detaylıca açıklayın:').setStyle(TextInputStyle.Paragraph).setRequired(true)));
@@ -406,7 +402,6 @@ client.on('interactionCreate', async interaction => {
     try { await command.execute(interaction); } catch (e) { console.error(e); }
 });
 
-// ================= GİRİŞ / ÇIKIŞ / BAN LOGLARI =================
 client.on('guildBanAdd', async ban => {
     const log = ban.guild.channels.cache.get("1537983368375828610"); 
     if (!log) return;

