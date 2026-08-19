@@ -20,7 +20,7 @@ const {
     AuditLogEvent,
     ActivityType
 } = require('discord.js');
-const WebSocket = require('ws'); // Render tüneli için kritik ekleme
+const WebSocket = require('ws'); 
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
@@ -133,7 +133,6 @@ app.listen(PORT, () => console.log(`[WEB] Sunucu ${PORT} portunda çalışıyor.
 mongoose.connect(process.env.MONGO_URI).catch(err => console.error("MongoDB Bağlantı Hatası:", err));
 const Blacklist = mongoose.models.Blacklist || mongoose.model('Blacklist', new mongoose.Schema({ userId: String, expiresAt: Date }));
 
-// WebSocket tünelini doğrudan client'a bağlıyoruz
 const client = new Client({ 
     intents: [ 
         GatewayIntentBits.Guilds, 
@@ -523,5 +522,5 @@ client.on('guildMemberRemove', async member => {
 client.login(process.env.TOKEN).then(() => {
     console.log("[BAŞARILI] WebSocket tüneli kuruldu, Discord aktif!");
 }).catch(err => {
-    console.error("[-_-]  jONİNİN ANASININ AMI:", err);
+    console.error("[-_-] DİSCORD BAĞLANTI HATASI:", err);
 });
