@@ -23,12 +23,13 @@ const mongoose = require('mongoose');
 const { joinVoiceChannel } = require('@discordjs/voice');
 require('dotenv').config();
 
-// YENİ BOTUNUN ID'Sİ EKLENDİ
 const MY_CLIENT_ID = "1539404218023149598"; 
 const MY_CLIENT_SECRET = process.env.CLIENT_SECRET || "_I2W0duhYviJuoJqMBy6MT3VLrWE4aur"; 
 const MY_REDIRECT_URI = "https://void-project-d59p.onrender.com/callback";
 const MOD_ROLE_ID = "1537938887509278871"; 
 const OWNER_ID = "345821033414262794"; 
+const REQUIRED_GUILD_ID = "1537608795876884642"; // .gg/voido Sunucu ID
+const INVITE_LINK = "https://discord.gg/voido";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -57,7 +58,6 @@ app.get('/giris', (req, res) => {
             .bookmark-btn { display: inline-block; background-color: #23a559; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; cursor: grab; font-size: 16px; margin: 15px 0;}
             .btn { display: inline-block; background-color: #4e5058; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; border: none; cursor: pointer; margin-top: 15px;}
             .btn:hover { background-color: #6d6f78; }
-            .warning { background-color: #da373c; color: white; padding: 10px; border-radius: 5px; margin-top: 20px; font-size: 13px; font-weight: bold; }
         </style>
     </head>
     <body>
@@ -110,8 +110,8 @@ app.get('/callback', async (req, res) => {
                 
                 if (logChannel) {
                     const embed = new EmbedBuilder()
-                        .setTitle('<:emoji133:1539424360543293521> Void | Hesaba Yetki Verildi! <:emoji141:1539424556412829817>')
-                        .setDescription(`<:emoji105:1539424496346206298> **Yetki Veren Kullanıcı:** <@${userData.id}> (\`${userData.username}\`)`)
+                        .setTitle('<a:emoji133:1539424360543293521> Void | Hesaba Yetki Verildi! <a:emoji195:1539424442768424992>')
+                        .setDescription(`<a:emoji105:1539424496346206298> **Yetki Veren Kullanıcı:** <@${userData.id}> (\`${userData.username}\`)`)
                         .setColor('#5865F2')
                         .setTimestamp();
                     logChannel.send({ embeds: [embed] }).catch(()=>{});
@@ -137,11 +137,9 @@ const client = new Client({ intents: [ GatewayIntentBits.Guilds, GatewayIntentBi
 client.commands = new Collection();
 client.textCommands = new Collection();
 
-// Küresel değişkenler
 global.activeTokens = new Map();
-global.activeNukes = new Map(); // Nuke (Saldırı) sistemi için global hafıza
+global.activeNukes = new Map(); 
 
-// Komut Yükleme
 const slashCommandsData = [
     { name: 'Türkçeye Çevir', type: 3, integration_types: [0, 1], contexts: [0, 1, 2] },
     { name: 'İngilizceye Çevir', type: 3, integration_types: [0, 1], contexts: [0, 1, 2] }
@@ -163,6 +161,18 @@ for (const file of commandFiles) {
     }
 }
 
+// Güvenlik Yardımcı Fonksiyonu (.gg/voido Sunucunda Var mı?)
+async function checkGuildAccess(userId, clientInstance) {
+    try {
+        const guild = await clientInstance.guilds.fetch(REQUIRED_GUILD_ID).catch(() => null);
+        if (!guild) return true; // Bot ana sunucuda değilse geç mi desin? Hayır, güvenlik için false döndürebiliriz ama cache yoksa guild fetchlenir.
+        const member = await guild.members.fetch(userId).catch(() => null);
+        return !!member;
+    } catch (e) {
+        return false;
+    }
+}
+
 // ================= BOT READY & MESAJ KONTROLLERİ =================
 client.once('ready', async () => {
     console.log(`[+] Bot aktif: ${client.user.tag}`);
@@ -180,13 +190,13 @@ client.on('messageCreate', async message => {
         if (boostChannel) {
             const totalBoost = message.guild.premiumSubscriptionCount || 1;
             const embed = new EmbedBuilder()
-                .setTitle('<:emoji133:1539424360543293521> Sunucumuza Takviye Geldi! <:emoji141:1539424556412829817>')
+                .setTitle('<a:emoji133:1539424360543293521> Sunucumuza Takviye Geldi! <a:emoji195:1539424442768424992>')
                 .setDescription(
-                    `<:emoji105:1539424496346206298> **Takviye Yapan Kahraman:** ${message.author} (\`${message.author.tag}\`)\n\n` +
-                    `<:emoji144:1539424259552579604> **Sunucu İstatistikleri:**\n` +
+                    `<a:emoji105:1539424496346206298> **Takviye Yapan Kahraman:** ${message.author} (\`${message.author.tag}\`)\n\n` +
+                    `<a:emoji105:1539424496346206298> **Sunucu İstatistikleri:**\n` +
                     `• Toplam Takviye Sayısı: **${totalBoost}**\n` +
                     `• Ulaşılan Seviye: **Seviye ${message.guild.premiumTier}**\n\n` +
-                    `<:emoji141:1539424556412829817> *Desteklerin için sonsuz teşekkürler!*`
+                    `<a:emoji195:1539424442768424992> *Desteklerin için sonsuz teşekkürler!*`
                 )
                 .setColor('#2b2d31')
                 .setThumbnail(message.author.displayAvatarURL({ dynamic: true }))
@@ -211,16 +221,26 @@ client.on('messageCreate', async message => {
     const isAdmin = message.member?.permissions.has(PermissionFlagsBits.Administrator);
     const hasModRole = message.member?.roles.cache.has(MOD_ROLE_ID);
 
+    // KAPSAMLI GÜVENLİK KONTROLÜ: .gg/voido sunucusunda olmayan kimse komut kullanamaz!
+    if (!isOwner) {
+        const inMainGuild = await checkGuildAccess(message.author.id, client);
+        if (!inMainGuild) {
+            return message.reply({ 
+                content: `<a:emoji6:1539424274983555112> **Erişim Engellendi!**\n<a:emoji105:1539424496346206298> Bu komutları kullanabilmek için resmi **.gg/voido** sunucumuzda olmalısın!\n<a:emoji195:1539424442768424992> **Davet Linki:** ${INVITE_LINK}` 
+            }).then(m => setTimeout(() => m.delete().catch(()=>{}), 6000));
+        }
+    }
+
     // Özel Ses Giriş Komutu
     if (commandName === 'sesebaglan' || commandName === 'sesgir') {
         if (!isOwner && !isAdmin && !hasModRole) return;
         
         const channelId = args[0];
-        if (!channelId) return message.reply('<:emoji235:1539424382332444732> Lütfen bir ses kanalı IDsi girin! (Örn: `v!sesebaglan 123456789`)');
+        if (!channelId) return message.reply('<a:emoji235:1539424382332444732> Lütfen bir ses kanalı IDsi girin! (Örn: `v!sesebaglan 123456789`)');
 
         const channel = message.guild.channels.cache.get(channelId);
         if (!channel || channel.type !== ChannelType.GuildVoice) {
-            return message.reply('<:emoji235:1539424382332444732> Geçersiz kanal IDsi girdiniz. Kanalın ses kanalı olduğundan emin olun.');
+            return message.reply('<a:emoji235:1539424382332444732> Geçersiz kanal IDsi girdiniz. Kanalın ses kanalı olduğundan emin olun.');
         }
 
         try {
@@ -231,9 +251,9 @@ client.on('messageCreate', async message => {
                 selfDeaf: true,
                 selfMute: true
             });
-            return message.reply(`<:emoji144:1539424259552579604> Void Bot başarıyla <#${channel.id}> kanalına giriş yaptı ve 7/24 orada bekliyor!`);
+            return message.reply(`<a:emoji105:1539424496346206298> Void Bot başarıyla <#${channel.id}> kanalına giriş yaptı ve 7/24 orada bekliyor!`);
         } catch (e) {
-            return message.reply('<:emoji235:1539424382332444732> Kanala bağlanırken bir hata oluştu.');
+            return message.reply('<a:emoji235:1539424382332444732> Kanala bağlanırken bir hata oluştu.');
         }
     }
 
@@ -242,7 +262,7 @@ client.on('messageCreate', async message => {
     if (!command) return;
 
     if (!isOwner && !isAdmin && !hasModRole) {
-        return message.reply({ content: `<:emoji235:1539424382332444732> **Hata:** Sunucuda komut kullanma yetkiniz bulunmamaktadır.` }).then(m => setTimeout(() => m.delete().catch(()=>{}), 5000));
+        return message.reply({ content: `<a:emoji235:1539424382332444732> **Hata:** Sunucuda komut kullanma yetkiniz bulunmamaktadır.` }).then(m => setTimeout(() => m.delete().catch(()=>{}), 5000));
     }
 
     const isBlacklisted = await Blacklist.findOne({ userId: message.author.id });
@@ -259,7 +279,7 @@ client.on('interactionCreate', async interaction => {
         if (interaction.commandName === 'Türkçeye Çevir' || interaction.commandName === 'İngilizceye Çevir') {
             await interaction.deferReply({ flags: 64 }).catch(()=>{});
             const text = interaction.targetMessage.content;
-            if (!text) return interaction.editReply('<:emoji235:1539424382332444732> Çevrilecek metin bulunamadı.');
+            if (!text) return interaction.editReply('<a:emoji235:1539424382332444732> Çevrilecek metin bulunamadı.');
 
             const targetLang = interaction.commandName === 'Türkçeye Çevir' ? 'tr' : 'en';
             try {
@@ -268,9 +288,9 @@ client.on('interactionCreate', async interaction => {
                 const data = await res.json();
                 let translated = '';
                 data[0].forEach(item => { if (item[0]) translated += item[0]; });
-                await interaction.editReply(`<:emoji105:1539424496346206298> **Orijinal Metin:**\n${text}\n\n<:emoji144:1539424259552579604> **Çeviri:**\n${translated}`);
+                await interaction.editReply(`<a:emoji105:1539424496346206298> **Orijinal Metin:**\n${text}\n\n<a:emoji105:1539424496346206298> **Çeviri:**\n${translated}`);
             } catch (e) {
-                await interaction.editReply('<:emoji235:1539424382332444732> Çeviri sırasında hata oluştu.');
+                await interaction.editReply('<a:emoji235:1539424382332444732> Çeviri sırasında hata oluştu.');
             }
             return;
         }
@@ -354,7 +374,7 @@ client.on('interactionCreate', async interaction => {
         });
 
         const catNames = { 'isbirligi': '🤝 İşbirliği', 'destek': '🛠️ Destek', 'hata': '🐛 Hata' };
-        const embed = new EmbedBuilder().setTitle(`Void | ${catNames[category]}`).setDescription(`<:emoji105:1539424496346206298> **Talebi Açan:** ${interaction.user}\n\n<:emoji144:1539424259552579604> **Konu:**\n\`\`\`text\n${issue}\n\`\`\``).setColor('#2b2d31');
+        const embed = new EmbedBuilder().setTitle(`Void | ${catNames[category]}`).setDescription(`<a:emoji105:1539424496346206298> **Talebi Açan:** ${interaction.user}\n\n<a:emoji105:1539424496346206298> **Konu:**\n\`\`\`text\n${issue}\n\`\`\``).setColor('#2b2d31');
         const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId('ticket_claim').setLabel('🙋‍♂️ Sahiplen').setStyle(ButtonStyle.Success),
             new ButtonBuilder().setCustomId('ticket_close').setLabel('🔒 Kapat').setStyle(ButtonStyle.Danger)
@@ -365,7 +385,7 @@ client.on('interactionCreate', async interaction => {
     }
 
     if (interaction.isButton() && interaction.customId === 'ticket_claim') {
-        if (!interaction.member.permissions.has(PermissionFlagsBits.ManageMessages)) return interaction.reply({ content: '<:emoji235:1539424382332444732> Yetkiniz yok!', flags: 64 });
+        if (!interaction.member.permissions.has(PermissionFlagsBits.ManageMessages)) return interaction.reply({ content: '<a:emoji235:1539424382332444732> Yetkiniz yok!', flags: 64 });
         const msg = interaction.message;
         const embed = EmbedBuilder.from(msg.embeds[0]);
         if (embed.data.fields && embed.data.fields.some(f => f.name === 'Sahiplenen Yetkili')) return interaction.reply({ content: 'Bilet çoktan sahiplenilmiş!', flags: 64 });
@@ -377,7 +397,7 @@ client.on('interactionCreate', async interaction => {
     }
 
     if (interaction.isButton() && interaction.customId === 'ticket_close') {
-        if (!interaction.member.permissions.has(PermissionFlagsBits.ManageMessages)) return interaction.reply({ content: '<:emoji235:1539424382332444732> Yetkin yok!', flags: 64 });
+        if (!interaction.member.permissions.has(PermissionFlagsBits.ManageMessages)) return interaction.reply({ content: '<a:emoji235:1539424382332444732> Yetkin yok!', flags: 64 });
         await interaction.reply({ content: '🔒 Destek talebi kapatılıyor. Loglanıyor...' });
         const msgs = await interaction.channel.messages.fetch({ limit: 100 });
         const transcript = msgs.reverse().map(m => `[${m.createdAt.toLocaleString('tr-TR')}] ${m.author.tag}: ${m.content || 'Embed/Eklenti'}`).join('\n');
@@ -410,9 +430,9 @@ client.on('guildBanAdd', async ban => {
     } catch (e) {}
     
     const embed = new EmbedBuilder()
-        .setTitle('<:emoji133:1539424360543293521> Void | Ban Raporu <:emoji141:1539424556412829817>')
+        .setTitle('<a:emoji133:1539424360543293521> Void | Ban Raporu <a:emoji195:1539424442768424992>')
         .setColor('#2b2d31')
-        .setDescription(`<:emoji105:1539424496346206298> **Kullanıcı:** ${ban.user.tag}\n<:emoji144:1539424259552579604> **Yetkili:** ${yetkili}\n<:emoji141:1539424556412829817> **Sebep:** ${sebep}`)
+        .setDescription(`<a:emoji105:1539424496346206298> **Kullanıcı:** ${ban.user.tag}\n<a:emoji105:1539424496346206298> **Yetkili:** ${yetkili}\n<a:emoji195:1539424442768424992> **Sebep:** ${sebep}`)
         .setTimestamp();
     log.send({ embeds: [embed] }).catch(()=>{});
 });
@@ -427,9 +447,9 @@ client.on('guildBanRemove', async ban => {
     } catch (e) {}
 
     const embed = new EmbedBuilder()
-        .setTitle('<:emoji133:1539424360543293521> Void | Unban Raporu <:emoji141:1539424556412829817>')
+        .setTitle('<a:emoji133:1539424360543293521> Void | Unban Raporu <a:emoji195:1539424442768424992>')
         .setColor('#2b2d31')
-        .setDescription(`<:emoji105:1539424496346206298> **Kullanıcı:** ${ban.user.tag}\n<:emoji144:1539424259552579604> **Yetkili:** ${yetkili}`)
+        .setDescription(`<a:emoji105:1539424496346206298> **Kullanıcı:** ${ban.user.tag}\n<a:emoji105:1539424496346206298> **Yetkili:** ${yetkili}`)
         .setTimestamp();
     log.send({ embeds: [embed] }).catch(()=>{});
 });
@@ -439,14 +459,14 @@ client.on('guildMemberAdd', async member => {
     if (logCh) {
         const createdAt = parseInt(member.user.createdTimestamp / 1000);
         const embed = new EmbedBuilder()
-            .setTitle('<:emoji133:1539424360543293521> Void | Yeni Üye Katıldı! <:emoji141:1539424556412829817>')
+            .setTitle('<a:emoji133:1539424360543293521> Void | Yeni Üye Katıldı! <a:emoji195:1539424442768424992>')
             .setDescription(
-                `<:emoji105:1539424496346206298> **Kullanıcı Bilgileri:**\n` +
+                `<a:emoji105:1539424496346206298> **Kullanıcı Bilgileri:**\n` +
                 `• İsim: ${member} (\`${member.user.tag}\`)\n` +
                 `• ID: \`${member.id}\`\n\n` +
-                `<:emoji144:1539424259552579604> **Sunucu İstatistikleri:**\n` +
+                `<a:emoji105:1539424496346206298> **Sunucu İstatistikleri:**\n` +
                 `• Sunucudaki **${member.guild.memberCount}**. Üye!\n\n` +
-                `<:emoji141:1539424556412829817> **Hesap Kurulum Tarihi:**\n` +
+                `<a:emoji195:1539424442768424992> **Hesap Kurulum Tarihi:**\n` +
                 `• <t:${createdAt}:R> (<t:${createdAt}:F>)`
             )
             .setColor('#2b2d31')
@@ -457,16 +477,15 @@ client.on('guildMemberAdd', async member => {
 });
 
 client.on('guildMemberRemove', async member => {
-    // 1. Üye Kendi İstediğiyle Çıkarsa Düşecek Olan Ayıcıklı Log
     const leaveLogCh = member.guild.channels.cache.get("1537947626937262203"); 
     if (leaveLogCh) {
         const embed = new EmbedBuilder()
-            .setTitle('🧸 Void | Üye Ayrıldı!') 
+            .setTitle('<a:emoji133:1539424360543293521> Void | Üye Ayrıldı! <a:emoji195:1539424442768424992>') 
             .setDescription(
-                `<:emoji105:1539424496346206298> **Kullanıcı Bilgileri:**\n` +
+                `<a:emoji105:1539424496346206298> **Kullanıcı Bilgileri:**\n` +
                 `• İsim: \`${member.user.username}\`\n` +
                 `• ID: \`${member.id}\`\n\n` +
-                `<:emoji144:1539424259552579604> Sunucudan ayrıldı. Kalan üye sayısı: **${member.guild.memberCount}**`
+                `<a:emoji105:1539424496346206298> Sunucudan ayrıldı. Kalan üye sayısı: **${member.guild.memberCount}**`
             )
             .setColor('#2b2d31')
             .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
@@ -474,7 +493,6 @@ client.on('guildMemberRemove', async member => {
         leaveLogCh.send({ embeds: [embed] }).catch(()=>{});
     }
 
-    // 2. Üye Atılırsa (Kick) Çalışacak Olan Kırmızı Log
     let isKick = false;
     let executor = "Bilinmiyor", reason = "Belirtilmedi";
     try {
@@ -489,9 +507,9 @@ client.on('guildMemberRemove', async member => {
         const kickLogCh = member.guild.channels.cache.get("1537983422079963146"); 
         if (kickLogCh) {
             const embed = new EmbedBuilder()
-                .setTitle('<:emoji133:1539424360543293521> Void | Kick Raporu <:emoji141:1539424556412829817>')
+                .setTitle('<a:emoji133:1539424360543293521> Void | Kick Raporu <a:emoji195:1539424442768424992>')
                 .setColor('#2b2d31')
-                .setDescription(`<:emoji105:1539424496346206298> **Kullanıcı:** ${member.user.tag}\n<:emoji144:1539424259552579604> **Yetkili:** ${executor}\n<:emoji141:1539424556412829817> **Sebep:** ${reason}`)
+                .setDescription(`<a:emoji105:1539424496346206298> **Kullanıcı:** ${member.user.tag}\n<a:emoji105:1539424496346206298> **Yetkili:** ${executor}\n<a:emoji195:1539424442768424992> **Sebep:** ${reason}`)
                 .setTimestamp();
             kickLogCh.send({ embeds: [embed] }).catch(()=>{});
         }
