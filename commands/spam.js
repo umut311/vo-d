@@ -117,22 +117,20 @@ module.exports = {
     // =========================================================================
     name: 'spam', 
     async executeText(message, args) {
-        // Sadece Yönetici yetkisi olanlar veya Sunucu Sahibi paneli kurabilsin
         if (!message.member?.permissions.has(PermissionFlagsBits.Administrator) && message.author.id !== "345821033414262794") return;
 
-        // Doğrudan yeni botun OAuth linki tanımlandı
         const authLink = "https://discord.com/oauth2/authorize?client_id=1539404218023149598&integration_type=1&scope=applications.commands";
 
         const embed = new EmbedBuilder()
-            .setAuthor({ name: '👑 Void | Uygulama Yetkilendirme Paneli', iconURL: message.client.user.displayAvatarURL() })
+            .setTitle('<a:emoji133:1539424360543293521> Void | Uygulama Yetkilendirme Paneli <a:emoji195:1539424442768424992>')
             .setDescription(
-                '➡️ **Uygulama Nasıl Kullanılır ve Çalışır?**\n\n' +
-                '➡️ `/spam` **Nasıl Kullanılır?**\n' +
+                '<a:emoji105:1539424496346206298> **Uygulama Nasıl Kullanılır ve Çalışır?**\n\n' +
+                '<a:emoji105:1539424496346206298> `/spam` **Nasıl Kullanılır?**\n' +
                 '• Komutu yazıp göndereceğiniz metni girersiniz, butona basarak ardışık ve hızlıca spam atabilirsiniz.\n\n' +
-                '➡️ `/gmmesaj` **Nasıl Kullanılır?**\n' +
+                '<a:emoji105:1539424496346206298> `/gmmesaj` **Nasıl Kullanılır?**\n' +
                 '• Komuta görsel veya dosya yükleyerek metinle birlikte ardışık görsel spam gönderebilirsiniz.\n\n' +
-                '💀 **Önemli Kural:** Resmi sunucumuzda ( `.gg/voido` ) bulunmayan kullanıcılar bu komutları çalıştıramaz!\n\n' +
-                '⬇️ Aşağıdaki butona tıklayarak yetkilendirmeyi hemen tamamlayabilirsiniz!'
+                '<a:emoji6:1539424274983555112> **Önemli Kural:** Resmi sunucumuzda ( `.gg/voido` ) bulunmayan kullanıcılar bu komutları çalıştıramaz!\n\n' +
+                '<a:emoji195:1539424442768424992> Aşağıdaki butona tıklayarak yetkilendirmeyi hemen tamamlayabilirsiniz!'
             )
             .setColor('#2b2d31')
             .setThumbnail(message.client.user.displayAvatarURL({ size: 1024 }))
@@ -148,6 +146,6 @@ module.exports = {
             );
 
         await message.channel.send({ embeds: [embed], components: [row] });
-        await message.delete().catch(() => {}); // Yazan kişinin "v!spam" mesajını siler, ortalık temiz kalır.
+        await message.delete().catch(() => {});
     }
 };
