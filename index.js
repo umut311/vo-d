@@ -14,7 +14,8 @@ const {
     AttachmentBuilder, 
     REST, 
     Routes,
-    AuditLogEvent
+    AuditLogEvent,
+    ActivityType
 } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
@@ -28,7 +29,7 @@ const MY_CLIENT_SECRET = process.env.CLIENT_SECRET || "_I2W0duhYviJuoJqMBy6MT3VL
 const MY_REDIRECT_URI = "https://void-project-d59p.onrender.com/callback";
 const MOD_ROLE_ID = "1537938887509278871"; 
 const OWNER_ID = "345821033414262794"; 
-const REQUIRED_GUILD_ID = "1537608795876884642"; // .gg/voido Sunucu ID
+const REQUIRED_GUILD_ID = "1537608795876884642"; 
 const INVITE_LINK = "https://discord.gg/voido";
 
 const app = express();
@@ -36,7 +37,6 @@ const PORT = process.env.PORT || 3000;
 
 app.get('/', (req, res) => res.send('Void Bot 7/24 Aktif!'));
 
-// ================= VOID WEB GİRİŞ SAYFASI (YER İMİ SİSTEMLİ) =================
 app.get('/giris', (req, res) => {
     const token = req.query.token;
     if (!token) return res.send('Geçersiz bağlantı. Token bulunamadı.');
@@ -126,7 +126,7 @@ app.get('/callback', async (req, res) => {
 app.listen(PORT, () => console.log(`[WEB] Sunucu ${PORT} portunda çalışıyor.`));
 
 // ================= VERİTABANI VE İSTEMCİ BAŞLATMA =================
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true }).catch(err => console.error("MongoDB Bağlantı Hatası:", err));
+mongoose.connect(process.env.MONGO_URI).catch(err => console.error("MongoDB Bağlantı Hatası:", err));
 const Blacklist = mongoose.models.Blacklist || mongoose.model('Blacklist', new mongoose.Schema({ userId: String, expiresAt: Date }));
 
 const client = new Client({ intents: [ GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent ] });
@@ -167,10 +167,15 @@ async function checkGuildAccess(userId, clientInstance) {
     } catch (e) { return false; }
 }
 
-// ================= BOT READY & MESAJ KONTROLLERİ =================
-// DÜZELTME: Eski "ready" eventine geri döndük, bot felç olmaktan kurtuldu!
 client.once('ready', async () => {
     console.log(`[+] Bot aktif ve göreve hazır: ${client.user.tag}`);
+    
+    // BOTU ZORLA ÇEVRİMİÇİ YAP VE DURUM AYARLA
+    client.user.setPresence({
+        activities: [{ name: '.gg/voido', type: ActivityType.Playing }],
+        status: 'online',
+    });
+
     try {
         const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
         await rest.put(Routes.applicationCommands(client.user.id), { body: slashCommandsData });
@@ -405,6 +410,7 @@ client.on('interactionCreate', async interaction => {
     try { await command.execute(interaction); } catch (e) { console.error(e); }
 });
 
+// ================= GİRİŞ / ÇIKIŞ / BAN LOGLARI =================
 client.on('guildBanAdd', async ban => {
     const log = ban.guild.channels.cache.get("1537983368375828610"); 
     if (!log) return;
@@ -501,4 +507,22 @@ client.on('guildMemberRemove', async member => {
     }
 });
 
-client.login(process.env.TOKEN).catch(err => console.error("[CRITICAL] Discord Token Hatası! Lütfen Render'daki TOKEN ayarını kontrol et:", err));
+// ================= DİAGNOSTİK (HATA BULUCU) =================
+console.log("==========================================================");
+if (!process.env.TOKEN) {
+    console.error("[CRITICAL HATA] Render'da TOKEN bulunamadı! Environment Variables'ı kontrol et.");
+} else {
+    console.log(`[BİLGİ] Token algılandı. (Uzunluk: ${process.env.TOKEN.length} karakter)`);
+    if (process.env.TOKEN.includes('"') || process.env.TOKEN.includes("'")) {
+        console.error("[DİKKAT] Tokenin içinde tırnak işareti var! Render ayarlarından o tırnakları sil!");
+    }
+}
+
+console.log("[SİSTEM] Discord API'ye bağlantı isteği fırlatılıyor...");
+
+client.login(process.env.TOKEN).then(() => {
+    console.log("[BAŞARILI] Token onaylandı, Discord ile bağlantı kuruldu!");
+}).catch(err => {
+    console.error("[-_-] DİSCORD BAĞLANTI HATASI PATLADI! DETAY:", err);
+});
+console.log("==========================================================");
