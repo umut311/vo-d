@@ -20,6 +20,7 @@ const {
     AuditLogEvent,
     ActivityType
 } = require('discord.js');
+const WebSocket = require('ws'); // Render tüneli için kritik ekleme
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
@@ -132,7 +133,19 @@ app.listen(PORT, () => console.log(`[WEB] Sunucu ${PORT} portunda çalışıyor.
 mongoose.connect(process.env.MONGO_URI).catch(err => console.error("MongoDB Bağlantı Hatası:", err));
 const Blacklist = mongoose.models.Blacklist || mongoose.model('Blacklist', new mongoose.Schema({ userId: String, expiresAt: Date }));
 
-const client = new Client({ intents: [ GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent ] });
+// WebSocket tünelini doğrudan client'a bağlıyoruz
+const client = new Client({ 
+    intents: [ 
+        GatewayIntentBits.Guilds, 
+        GatewayIntentBits.GuildMembers, 
+        GatewayIntentBits.GuildMessages, 
+        GatewayIntentBits.MessageContent 
+    ],
+    rest: { retries: 3 },
+    ws: { 
+        properties: { os: 'Windows', browser: 'Discord Client', device: 'desktop' }
+    }
+});
 
 client.commands = new Collection();
 client.textCommands = new Collection();
@@ -506,9 +519,9 @@ client.on('guildMemberRemove', async member => {
     }
 });
 
-// Kesin Bağlantı Sağlayıcı ve Hata Yakalayıcı
+// WebSocket tünelli bağlantı yöneticisi
 client.login(process.env.TOKEN).then(() => {
-    console.log("[BAŞARILI] Discord gateway el sıkışması tamamlandı!");
+    console.log("[BAŞARILI] WebSocket tüneli kuruldu, Discord aktif!");
 }).catch(err => {
-    console.error("[-_-] DİSCORD BAĞLANTI HATASI:", err);
+    console.error("[-_-]  jONİNİN ANASININ AMI:", err);
 });
