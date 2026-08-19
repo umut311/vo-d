@@ -9,21 +9,21 @@ module.exports = {
         .setContexts([0]),
         
     async execute(interaction) {
-        await interaction.reply({ content: 'Bu komut şu anlık metin (v!ticket) olarak ayarlandı.', flags: 64 });
+        await interaction.reply({ content: '<:emoji235:1539424382332444732> Bu komut şu anlık metin (v!ticket) olarak ayarlandı.', flags: 64 });
     },
 
     async executeText(message) {
         if (!message.member.permissions.has('Administrator')) return;
 
         const embed = new EmbedBuilder()
-            .setTitle('<a:emoji58:1537925046486433802> Void ┊ İletişim & Destek Merkezi <a:emoji24:1537925080447717447>')
+            .setTitle('<:emoji133:1539424360543293521> Void ┊ İletişim & Destek Merkezi <:emoji141:1539424556412829817>')
             .setDescription(
-                '<a:emoji109:1537925984882266212> **Bir sorun mu yaşıyorsunuz veya iletişime mi geçmek istiyorsunuz?**\n\n' +
-                '<a:emoji110:1537925433763299418> Aşağıdaki menüyü kullanarak ihtiyacınıza uygun departmanı seçebilir ve yetkililerimizle hızlıca iletişime geçebilirsiniz.\n\n' +
-                '<a:emoji110:1537925433763299418> **Kurallar & İşleyiş:**\n' +
+                '<:emoji105:1539424496346206298> **Bir sorun mu yaşıyorsunuz veya iletişime mi geçmek istiyorsunuz?**\n\n' +
+                '<:emoji144:1539424259552579604> Aşağıdaki menüyü kullanarak ihtiyacınıza uygun departmanı seçebilir ve yetkililerimizle hızlıca iletişime geçebilirsiniz.\n\n' +
+                '<:emoji144:1539424259552579604> **Kurallar & İşleyiş:**\n' +
                 '• Lütfen formu açık, anlaşılır ve eksiksiz doldurunuz.\n' +
                 '• Gereksiz yere talep açan kullanıcılar sistemden uzaklaştırılacaktır.\n\n' +
-                '<a:emoji24:1537925080447717447> *Aşağıdan bir seçenek belirleyiniz.*'
+                '<:emoji141:1539424556412829817> *Aşağıdan bir seçenek belirleyiniz.*'
             )
             .setColor('#2b2d31')
             .setFooter({ text: 'Void Destek Sistemi', iconURL: message.client.user.displayAvatarURL({ dynamic: true }) })
@@ -31,7 +31,7 @@ module.exports = {
 
         const row = new ActionRowBuilder().addComponents(
             new StringSelectMenuBuilder()
-                .setCustomId('ticket_category_select')
+                .setCustomId('ticket_cheategory_select')
                 .setPlaceholder('Lütfen departman seçiniz...')
                 .addOptions([
                     { label: 'İşbirliği', description: 'Sponsorluk, reklam ve işbirliği talepleri.', value: 'isbirligi', emoji: '🤝' },

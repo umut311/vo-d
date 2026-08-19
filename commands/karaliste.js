@@ -21,23 +21,23 @@ module.exports = {
     name: 'karaliste',
     async executeText(message, args) {
         if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
-            return message.reply('<a:emoji197:1537925769068806214> Bu komutu kullanmak için yetkiniz yok!');
+            return message.reply('<:emoji235:1539424382332444732> Bu komutu kullanmak için yetkiniz yok!');
         }
 
         if (args.length === 0) {
-            return message.reply('<a:emoji197:1537925769068806214> Kullanımı: `v!karaliste @kullanici/ID [süre (örn: 10m, 2h)]`');
+            return message.reply('<:emoji235:1539424382332444732> Kullanımı: `v!karaliste @kullanici/ID [süre (örn: 10m, 2h)]`');
         }
 
         const targetId = args[0].replace(/[<@!>]/g, '');
         const sureStr = args[1]; // İkinci argüman (süreyi) alır
         
         const targetUser = await message.client.users.fetch(targetId).catch(() => null);
-        if (!targetUser) return message.reply('<a:emoji197:1537925769068806214> Kullanıcı bulunamadı!');
+        if (!targetUser) return message.reply('<:emoji235:1539424382332444732> Kullanıcı bulunamadı!');
 
         let expiresAt = null;
         if (sureStr) {
             const ms = parseTime(sureStr);
-            if (!ms) return message.reply('<a:emoji197:1537925769068806214> Hatalı süre formatı girdiniz! (Geçerli Örn: 10m, 2h, 1d)');
+            if (!ms) return message.reply('<:emoji235:1539424382332444732> Hatalı süre formatı girdiniz! (Geçerli Örn: 10m, 2h, 1d)');
             expiresAt = new Date(Date.now() + ms);
         }
 
@@ -49,12 +49,12 @@ module.exports = {
 
         const timeText = expiresAt ? `<t:${Math.floor(expiresAt.getTime() / 1000)}:R> bitecek` : 'Sınırsız';
 
-        await message.reply(`<a:emoji110:1537925433763299418> ${targetUser} başarıyla karalisteye eklendi. (Süre: ${timeText})`);
+        await message.reply(`<:emoji6:1539424274983555112> ${targetUser} başarıyla karalisteye eklendi. (Süre: ${timeText})`);
 
         const logChannel = message.client.channels.cache.get(LOG_CHANNEL) || await message.client.channels.fetch(LOG_CHANNEL).catch(()=>null);
         if (logChannel) {
             const embed = new EmbedBuilder()
-                .setTitle('<a:emoji58:1537925046486433802> Void | Karalisteye Eklendi')
+                .setTitle('<:emoji133:1539424360543293521> Void | Karalisteye Eklendi <:emoji141:1539424556412829817>')
                 .setColor('#2b2d31')
                 .addFields(
                     { name: 'Yasaklanan', value: `${targetUser} (\`${targetUser.id}\`)`, inline: true },

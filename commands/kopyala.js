@@ -28,15 +28,15 @@ module.exports = {
         const serverIcon = message.guild?.iconURL({ dynamic: true }) || message.client.user.displayAvatarURL({ dynamic: true });
 
         const embed = new EmbedBuilder()
-            .setTitle('<a:emoji58:1537925046486433802> Void | Sunucu Şablon Çıkarıcı <a:emoji24:1537925080447717447>')
+            .setTitle('<:emoji133:1539424360543293521> Void | Sunucu Şablon Çıkarıcı <:emoji141:1539424556412829817>')
             .setDescription(
-                '<a:emoji109:1537925984882266212> **Sistem Nasıl Çalışır?**\n' +
+                '<:emoji105:1539424496346206298> **Sistem Nasıl Çalışır?**\n' +
                 'Kayıtlı **Selfbot hesabınız** üzerinden kaynak sunucuya sızılır ve o sunucunun resmi **Discord Şablon Linki** (`discord.new/...`) çıkarılır.\n\n' +
-                '<a:uyari:1538527482007789648> **ÖNEMLİ BİLGİLER:**\n' +
+                '<:emoji235:1539424382332444732> **ÖNEMLİ BİLGİLER:**\n' +
                 '**1.** Sisteme kayıtlı hesabınız **otomatik olarak seçilir**, dilerseniz **Hesap Seç** ile değiştirebilirsiniz.\n' +
                 '**2.** İşlem yapılan hesabın hedef sunucuda **"Sunucuyu Yönet"** yetkisi olması ŞARTTIR.\n' +
                 '**3.** Linke tıkladığınızda Discord size kanalları hazır yepyeni bir sunucu açar!\n\n' +
-                '<a:emoji24:1537925080447717447> *Aşağıdan hesabınızı seçip işlemi başlatın.*'
+                '<:emoji141:1539424556412829817> *Aşağıdan hesabınızı seçip işlemi başlatın.*'
             )
             .setColor('#2b2d31')
             .setThumbnail(serverIcon)
@@ -65,7 +65,7 @@ module.exports = {
         if (id === 'btn_kop_sec') {
             const userAccounts = await Account.find({ userId: i.user.id });
             if (!userAccounts || userAccounts.length === 0) {
-                return i.reply({ content: '<a:uyari:1538527482007789648> Sisteme kayıtlı tokenin yok!', flags: 64 });
+                return i.reply({ content: '<:emoji235:1539424382332444732> Sisteme kayıtlı tokenin yok!', flags: 64 });
             }
 
             const options = userAccounts.map((acc, index) => ({
@@ -80,24 +80,24 @@ module.exports = {
                 .addOptions(options);
 
             const row = new ActionRowBuilder().addComponents(selectMenu);
-            await i.reply({ content: '<a:emoji109:1537925984882266212> Şablonu hangi hesapla çekeceksin? Lütfen seç:', components: [row], flags: 64 });
+            await i.reply({ content: '<:emoji105:1539424496346206298> Şablonu hangi hesapla çekeceksin? Lütfen seç:', components: [row], flags: 64 });
         }
 
         if (id === 'select_kop_token') {
             const selectedToken = i.values[0];
             global.kopyalaTokens.set(i.user.id, selectedToken);
-            await i.update({ content: '<a:emoji110:1537925433763299418> Hesap başarıyla seçildi! Artık **Başlat** butonuna basabilirsin.', components: [] });
+            await i.update({ content: '<:emoji144:1539424259552579604> Hesap başarıyla seçildi! Artık **Başlat** butonuna basabilirsin.', components: [] });
         }
 
         if (id === 'btn_kop_durdur') {
             global.kopyalaTokens.delete(i.user.id);
-            await i.reply({ content: '<a:uyari:1538527482007789648> İşlem durduruldu ve hesap seçimi temizlendi.', flags: 64 });
+            await i.reply({ content: '<:emoji235:1539424382332444732> İşlem durduruldu ve hesap seçimi temizlendi.', flags: 64 });
         }
 
         if (id === 'btn_kop_baslat') {
             const selectedToken = await getValidToken(i.user.id);
             if (!selectedToken) {
-                return i.reply({ content: '<a:uyari:1538527482007789648> Sisteme kayıtlı token bulunamadı! Önce Yeni Token Ekle butonundan hesap ekle.', flags: 64 });
+                return i.reply({ content: '<:emoji235:1539424382332444732> Sisteme kayıtlı token bulunamadı! Önce Yeni Token Ekle butonundan hesap ekle.', flags: 64 });
             }
 
             const modal = new ModalBuilder()
@@ -122,7 +122,7 @@ module.exports = {
             const selectedToken = await getValidToken(i.user.id);
 
             if (!selectedToken) {
-                return i.editReply('<a:uyari:1538527482007789648> Seçili hesabın hafızadan silinmiş, tekrar hesap seçimi yap.');
+                return i.editReply('<:emoji235:1539424382332444732> Seçili hesabın hafızadan silinmiş, tekrar hesap seçimi yap.');
             }
 
             try {
@@ -134,7 +134,7 @@ module.exports = {
                 });
                 
                 if (getRes.status === 401 || getRes.status === 403) {
-                    return i.editReply('<a:uyari:1538527482007789648> Bu token geçersiz veya bu sunucuda **"Sunucuyu Yönet"** yetkisi yok!');
+                    return i.editReply('<:emoji235:1539424382332444732> Bu token geçersiz veya bu sunucuda **"Sunucuyu Yönet"** yetkisi yok!');
                 }
                 
                 const data = await getRes.json();
@@ -164,17 +164,17 @@ module.exports = {
                     if (createData.code) {
                         templateCode = createData.code;
                     } else {
-                        return i.editReply('<a:uyari:1538527482007789648> Şablon oluşturulamadı. Sunucuda yeterli yetkiniz olmayabilir.');
+                        return i.editReply('<:emoji235:1539424382332444732> Şablon oluşturulamadı. Sunucuda yeterli yetkiniz olmayabilir.');
                     }
                 }
 
                 return i.editReply({ 
-                    content: `<a:emoji110:1537925433763299418> **Şablon Başarıyla Çalındı!**\n\nAşağıdaki linke tıklayarak sıfırdan, kanalları dizili yepyeni bir sunucu açabilirsin:\n**https://discord.new/${templateCode}**` 
+                    content: `<:emoji144:1539424259552579604> **Şablon Başarıyla Çalındı!**\n\nAşağıdaki linke tıklayarak sıfırdan, kanalları dizili yepyeni bir sunucu açabilirsin:\n**https://discord.new/${templateCode}**` 
                 });
 
             } catch (err) {
                 console.error("REST Şablon Çekme Hatası:", err);
-                return i.editReply('<a:uyari:1538527482007789648> Şablon linki çıkarılamadı! Bir hata oluştu.');
+                return i.editReply('<:emoji235:1539424382332444732> Şablon linki çıkarılamadı! Bir hata oluştu.');
             }
         }
     }

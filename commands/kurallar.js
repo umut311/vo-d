@@ -2,17 +2,17 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 
 function createRuleEmbed(client) {
     return new EmbedBuilder()
-        .setTitle('<a:kural:1537958003628703894> VOİD ┊ SUNUCU KURALLARI <a:emoji24:1537925080447717447>')
+        .setTitle('<:emoji133:1539424360543293521> VOİD ┊ SUNUCU KURALLARI <:emoji141:1539424556412829817>')
         .setDescription(
-            '<a:emoji109:1537925984882266212> **Sunucumuzun huzurunu ve düzenini korumak için uymanız gereken temel kurallar aşağıdadır:**\n\n' +
-            '**1.** <a:emoji110:1537925433763299418> **Saygı ve Düzey:** Olabildiğince saygılı kalın; Adk, Ddk, Mdk gibi ağır hakaretler ve küfürler kesinlikle yasaktır.\n\n' +
-            '**2.** <a:emoji110:1537925433763299418> **+18 ve Müstehcenlik:** Herhangi bir kanala +18 veya uygunsuz görsel, video ve medya atmak yasaktır.\n\n' +
-            '**3.** <a:emoji110:1537925433763299418> **Spam ve Flood:** Sohbet kanallarında flood atmayın, kimseyi üst üste gereksiz yere etiketleyip (taglayıp) rahatsız etmeyin.\n\n' +
-            '**4.** <a:emoji110:1537925433763299418> **Yetkili Kararları:** Yetkililerin almış olduğu kararlara, uyarılarına ve yönlendirmelerine karşı gelmek kesinlikle yasaktır.\n\n' +
-            '**5.** <a:emoji110:1537925433763299418> **Reklam Yasağı:** Özel mesajlardan (DM) veya sunucu içerisindeki kanallardan her türlü sosyal medya/sunucu reklamı yapmak yasaktır.\n\n' +
-            '**6.** <a:emoji110:1537925433763299418> **Hile ve Zararlı Yazılım:** Sunucu güvenliğini veya üyeleri tehlikeye atacak hile, zararlı link veya token paylaşımı yasaktır.\n\n' +
-            '**7.** <a:emoji110:1537925433763299418> **Kişisel Gizlilik:** Hiçbir üyenin kişisel bilgilerini (ifşa, telefon, adres vb.) izinsiz paylaşmak kesinlikle yasaktır.\n\n' +
-            '<a:emoji58:1537925046486433802> *Genel kurallar bunlardır. Kuralları okumuş sayılacaksınız, herkese iyi eğlenceler!*'
+            '<:emoji105:1539424496346206298> **Sunucumuzun huzurunu ve düzenini korumak için uymanız gereken temel kurallar aşağıdadır:**\n\n' +
+            '**1.** <:emoji144:1539424259552579604> **Saygı ve Düzey:** Olabildiğince saygılı kalın; Adk, Ddk, Mdk gibi ağır hakaretler ve küfürler kesinlikle yasaktır.\n\n' +
+            '**2.** <:emoji144:1539424259552579604> **+18 ve Müstehcenlik:** Herhangi bir kanala +18 veya uygunsuz görsel, video ve medya atmak yasaktır.\n\n' +
+            '**3.** <:emoji144:1539424259552579604> **Spam ve Flood:** Sohbet kanallarında flood atmayın, kimseyi üst üste gereksiz yere etiketleyip (taglayıp) rahatsız etmeyin.\n\n' +
+            '**4.** <:emoji144:1539424259552579604> **Yetkili Kararları:** Yetkililerin almış olduğu kararlara, uyarılarına ve yönlendirmelerine karşı gelmek kesinlikle yasaktır.\n\n' +
+            '**5.** <:emoji144:1539424259552579604> **Reklam Yasağı:** Özel mesajlardan (DM) veya sunucu içerisindeki kanallardan her türlü sosyal medya/sunucu reklamı yapmak yasaktır.\n\n' +
+            '**6.** <:emoji144:1539424259552579604> **Hile ve Zararlı Yazılım:** Sunucu güvenliğini veya üyeleri tehlikeye atacak hile, zararlı link veya token paylaşımı yasaktır.\n\n' +
+            '**7.** <:emoji144:1539424259552579604> **Kişisel Gizlilik:** Hiçbir üyenin kişisel bilgilerini (ifşa, telefon, adres vb.) izinsiz paylaşmak kesinlikle yasaktır.\n\n' +
+            '<:emoji133:1539424360543293521> *Genel kurallar bunlardır. Kuralları okumuş sayılacaksınız, herkese iyi eğlenceler!*'
         )
         .setColor('#2b2d31')
         .setThumbnail(client.user.displayAvatarURL({ dynamic: true }))

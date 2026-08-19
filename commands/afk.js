@@ -9,7 +9,7 @@ async function handleAFKPanel(interaction) {
     const userAccounts = await Account.find({ userId: interaction.user.id });
     
     const embed = new EmbedBuilder()
-        .setTitle('<a:emoji58:1537925046486433802> Void | AFK Yönetim Merkezi <a:emoji24:1537925080447717447>')
+        .setTitle('<:emoji185:1539424050881761440> Void | AFK Yönetim Merkezi <:emoji141:1539424556412829817>')
         .setColor('#2b2d31')
         .setThumbnail(interaction.guild?.iconURL({ dynamic: true }) || interaction.client.user.displayAvatarURL({ dynamic: true }))
         .setDescription(`Kayıtlı hesap sayınız: **${userAccounts.length}**\n\n*Aşağıdaki buton ile tüm hesaplarınızı AFK (Oynuyor) moduna alabilirsiniz.*`);
@@ -30,7 +30,6 @@ async function handleAFKPanel(interaction) {
 
                 const bot = new SelfbotClient({ checkUpdate: false });
                 bot.on('ready', () => {
-                    // .gg/voido OLARAK GÜNCELLENDİ
                     const status = new RichPresence(bot).setApplicationId('1491071700715048970').setName('.gg/voido | AFK').setType('PLAYING');
                     bot.user.setActivity(status);
                     global.activeTokens.set(acc.token, bot);
@@ -82,11 +81,11 @@ module.exports = {
     async execute(interaction) { await handleAFKPanel(interaction); },
     async executeText(message) {
         const embed = new EmbedBuilder()
-            .setTitle('<a:emoji58:1537925046486433802> Void | AFK Sistemi <a:emoji24:1537925080447717447>')
+            .setTitle('<:emoji185:1539424050881761440> Void | AFK Sistemi <:emoji141:1539424556412829817>')
             .setDescription('Kayıtlı hesaplarınızı 7/24 çevrimiçi tutmak ve durumunda sunucu reklamı sergilemek için tıklayın.')
             .setColor('#2b2d31')
             .setThumbnail(message.guild?.iconURL({ dynamic: true }) || message.client.user.displayAvatarURL({ dynamic: true }));
-        const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('btn_afk_ac').setLabel('AFK Panelini Aç').setStyle(ButtonStyle.Secondary).setEmoji('1537925080447717447'));
+        const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('btn_afk_ac').setLabel('AFK Panelini Aç').setStyle(ButtonStyle.Secondary));
         const msg = await message.channel.send({ embeds: [embed], components: [row] });
         msg.createMessageComponentCollector().on('collect', async i => { if (i.customId === 'btn_afk_ac') await handleAFKPanel(i); });
     }
